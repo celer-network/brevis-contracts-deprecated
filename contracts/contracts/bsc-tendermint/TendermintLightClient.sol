@@ -62,7 +62,9 @@ contract TendermintLightClient is Initializable, ITendermintLightClient {
         bytes calldata header,
         uint256[2] memory proofA,
         uint256[2][2] memory proofB,
-        uint256[2] memory proofC
+        uint256[2] memory proofC,
+        uint256[2] memory proofCommit,
+        uint256 proofCommitPub
     ) external returns (bool) {
         require(msg.sender == system.relayer(), "not relayer");
 
@@ -74,7 +76,7 @@ contract TendermintLightClient is Initializable, ITendermintLightClient {
         // assert header height is newer than consensus state
         require(height > latestHeight, "LC: header height not newer than consensus state height");
 
-        checkValidity(consensusStates[latestHeight], tmHeader, proofA, proofB, proofC);
+        checkValidity(consensusStates[latestHeight], tmHeader, proofA, proofB, proofC, proofCommit, proofCommitPub);
 
         synced[height] = true;
 
@@ -93,7 +95,9 @@ contract TendermintLightClient is Initializable, ITendermintLightClient {
         TmHeader.Data memory tmHeader,
         uint256[2] memory proofA,
         uint256[2][2] memory proofB,
-        uint256[2] memory proofC
+        uint256[2] memory proofC,
+        uint256[2] memory proofCommit,
+        uint256 proofCommitPub
     ) private view {
         LightHeader.Data memory lc;
         lc.chain_id = tmHeader.signed_header.header.chain_id;
@@ -113,7 +117,9 @@ contract TendermintLightClient is Initializable, ITendermintLightClient {
             ed25519Verifier,
             proofA,
             proofB,
-            proofC
+            proofC,
+            proofCommit,
+            proofCommitPub
         );
 
         require(ok, "LC: failed to verify header");

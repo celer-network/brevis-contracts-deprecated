@@ -47,7 +47,8 @@ const config: HardhatUserConfig = {
       optimizer: {
         enabled: true,
         runs: 800
-      }
+      },
+      viaIR: true,
     }
   },
   typechain: {

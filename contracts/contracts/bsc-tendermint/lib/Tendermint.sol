@@ -18,6 +18,7 @@ library Tendermint {
     using TendermintHelper for Commit.Data;
     using TendermintHelper for Vote.Data;
 
+    // TODO: Change visibility to public for deployment. For some reason have to use internal for abigen.
     function verify(
         SignedHeader.Data memory trustedHeader,
         SignedHeader.Data memory untrustedHeader,
@@ -25,8 +26,10 @@ library Tendermint {
         address verifier,
         uint256[2] memory proofA,
         uint256[2][2] memory proofB,
-        uint256[2] memory proofC
-    ) public view returns (bool) {
+        uint256[2] memory proofC,
+        uint256[2] memory proofCommit,
+        uint256 proofCommitPub
+    ) internal view returns (bool) {
         verifyNewHeaderAndVals(untrustedHeader, untrustedVals, trustedHeader);
 
         // Check the validator hashes are the same
@@ -45,7 +48,9 @@ library Tendermint {
             verifier,
             proofA,
             proofB,
-            proofC
+            proofC,
+            proofCommit,
+            proofCommitPub
         );
 
         return ok;
@@ -97,7 +102,9 @@ library Tendermint {
         address verifier,
         uint256[2] memory proofA,
         uint256[2][2] memory proofB,
-        uint256[2] memory proofC
+        uint256[2] memory proofC,
+        uint256[2] memory proofCommit,
+        uint256 proofCommitPub
     ) internal view returns (bool) {
         require(vals.validators.length == commit.signatures.length, "invalid commit signatures");
         require(commit.signatures.length > 8, "insufficient signatures");
@@ -127,14 +134,15 @@ library Tendermint {
             }
         }
 
-        uint256[56] memory input = prepareInput(pubkeys, messages);
-        return Ed25519Verifier(verifier).verifyProof(proofA, proofB, proofC, input);
+        uint256[57] memory input = prepareInput(pubkeys, messages, proofCommitPub);
+        return Ed25519Verifier(verifier).verifyProof(proofA, proofB, proofC, proofCommit, input);
     }
 
     function prepareInput(
         bytes[8] memory pubkeys,
-        bytes[8] memory messages
-    ) private pure returns (uint256[56] memory input) {
+        bytes[8] memory messages,
+        uint256 proofCommitPub
+    ) private pure returns (uint256[57] memory input) {
         for (uint256 i = 0; i < 8; i++) {
             bytes memory messagePart0 = BytesLib.slice(messages[i], 0, 25);
             bytes memory messagePart1 = BytesLib.slice(messages[i], 25, 25);
@@ -151,6 +159,7 @@ library Tendermint {
             input[2 * i + 40] = uint256(uint128(bytes16(pubkeyHigh)));
             input[2 * i + 1 + 40] = uint256(uint128(bytes16(pubkeyLow)));
         }
+        input[56] = proofCommitPub;
         return input;
     }
 

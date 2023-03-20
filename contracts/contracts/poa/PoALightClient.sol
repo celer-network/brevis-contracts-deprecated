@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+// SPDX-License-Identifier: Unlicensed
 pragma solidity 0.8.18;
 
 import "../bsc-tendermint/interfaces/IBSCValidatorSet.sol";
