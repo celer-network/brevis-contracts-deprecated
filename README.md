@@ -1,4 +1,4 @@
-# zkBridge
+# Contract Repo for Brevis: An Omnichain ZK Data Attestation Platform
 
 ## Light Client Contracts
 
@@ -14,5 +14,5 @@ Light client contracts model their corresponding chain's light client logic, rep
 
 | Path                     | Description                                           |
 | ------------------------ | ----------------------------------------------------- |
-| contracts/message-bridge | arbitrary message passing built on top of zkBridge    |
+| contracts/message-bridge | arbitrary message passing built on top of brevis      |
 | contracts/token-bridge   | peg-model token bridge built on top of message bridge |
