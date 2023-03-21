@@ -1,0 +1,57 @@
+{
+  "committee_map_proof": {
+    "sha256_ssz_root": "0x8fb08b2e6e2ba34635ed59b8742aea3063453c7477a6f8ba7e823b4c7df0bceb",
+    "poseidon_ssz_root": "0x27890fcd0226ba1ecb202817172b21c2146a0e0b29658fe1f708f384dd997af0",
+    "proof": {
+      "a": [
+        "0x157351c12a02acace27c05045ea751cb454d46a69b32f23202f75c79fadf2aee",
+        "0x2b3c44c49af4a0ba632eb31b92defa796bcaeca0cd92841d091ab8adb325e783"
+      ],
+      "b": [
+        [
+          "0x2793b6a5714d83d2f0247431c823bd6379ef85ebc0d7e0708bf399a8f357dbbd",
+          "0x0aae826f16d1e251fd02e40d3dcae173fee932c7c850273ba0d211dd0dd9bdb8"
+        ],
+        [
+          "0x1ebfe11a54c93e9496f20895143ce516412d26181853fb06a3ccc2c4cbe26036",
+          "0x138852b43955417a751952d5b2dcdd5cd9e5d83debb8b5d14788b8a7d4579c60"
+        ]
+      ],
+      "c": [
+        "0x256e47268418d816d0ee57774615d7999e194f384b93ea8f2f078cbf0e8db965",
+        "0x16e6376d9d28a17b64f9168797967e65e0ee98a2e790f5ce70d628b55cfe3648"
+      ],
+      "commitment": ["0x0", "0x0"]
+    }
+  },
+  "bls_sig_proof": {
+    "participation": 351,
+    "poseidon_root": "0x0b90f32a0d03c13a909e40b8bfa0dc049a9f3f8fbaab12ae880a0fa540e709ca",
+    "commitment_pub": "0x20a73442716736029f36c7cfbb0f8b0c2396480afca33a2cf12ea5ff303b990e",
+    "proof": {
+      "a": [
+        "0x2fcc68c288c35cc026d9417d7c2a8e16adda6a30bb0d6d8a70bf4fa1924e7179",
+        "0x056ac94e18f7aaaee2f76082c6ad49e002f3bea6cc6b8d6d3ae2977751a8022b"
+      ],
+      "b": [
+        [
+          "0x1ccf3744aaa47ea42d8fb569b336d944a6f8e7e49471ee2ebee5b058eb9fe0b0",
+          "0x1f7241a0208a2916185437aeb7aa4ee92e58686131fbc1d24221213ba60adf0b"
+        ],
+        [
+          "0x15263a4a5cbafde1d893c7fc9788b1a959602881b0faa1199fa1bfe41def0db2",
+          "0x1f27906b5cab7ddf2a35d923195512699bccc65adb562cd8fc19876d4c32fe1b"
+        ]
+      ],
+      "c": [
+        "0x15a0706bbf25b38fb75f15056e4406ca7eba2a75b0606381453904958d44da6b",
+        "0x1b59bc5a531edaf285ae09371aafb97ba868896557eb343cf40c96308f2255a0"
+      ],
+      "commitment": [
+        "0x20e770f2cd68ecd576208cd92632d5a8b53db55008c9abc316d10c6b9bde64e4",
+        "0x1715e4305be062eadb3196674be4fd873bc3131e5cf2c95b2b4bc284dae32b92"
+      ]
+    }
+  },
+  "duration_seconds": 164
+}

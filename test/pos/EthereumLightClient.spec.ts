@@ -1,168 +1,137 @@
 import { expect } from 'chai';
 import { zeroPad } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { FAKE_POSEIDON_ROOT_707 } from './data';
-import update5788608 from './finality_update_706_5788608.json';
-import updatePeriod706 from './finality_update_period_706.json';
+import { EXECUTION_STATE_PROOF_638 } from './data';
 import { lightClientFixture, LightClientFixture, loadFixture } from './fixture';
-import {
-  getSyncCommitteeRoot,
-  getSyncPeriodBySlot,
-  newLightClientFinalityUpdate,
-  newLightClientUpdate,
-  newSyncCommitteeUpdate,
-  ZERO_BYTES_32
-} from './helper';
+import { getSyncCommitteeRoot, getSyncPeriodBySlot, newLightClientUpdate } from './helper';
+import proof638 from './proof_638.json';
+import update637 from './update_637.json';
+import update638 from './update_638.json';
 
 let f: LightClientFixture;
-
-// describe('computeSigningRoot()', () => {
-//   beforeEach(async () => {
-//     f = await loadFixture(lightClientFixture);
-//   });
-//   const block = {
-//     slot: '5077296',
-//     proposer_index: '59489',
-//     parent_root: '0x82a5a23dc1038434376c626fe94e3485d8c97ca9ecaab2bf655896db02f56074',
-//     state_root: '0x290a021645890c8394c07351edccfcf65fdb9889d75039bf9bb944cbcb4efcf6',
-//     body_root: '0xa922807e2fb108681b300ae05fd25d08c6fff559e5d1fecf420dbbe0b2a8b857'
-//   };
-//   it('computes correct domain', async () => {
-//     const [admin] = await ethers.getSigners();
-//     let tx = f.lightClient.connect(admin).computeDomain();
-
-//   });
-//   it('computes correct signing root', async () => {
-//     const [admin] = await ethers.getSigners();
-//     const update = newLightClientUpdate(update5788608);
-//   });
-// });
 
 describe('processLightClientUpdate()', () => {
   beforeEach(async () => {
     f = await loadFixture(lightClientFixture);
   });
 
-  it('checks committee participation', async () => {
+  it('rejects update if finality proof is invalid', async () => {
     const [admin] = await ethers.getSigners();
-    const update = newLightClientUpdate(update5788608);
-
-    let tx = f.lightClient.connect(admin).processLightClientUpdate(update);
-    await expect(tx).to.not.be.revertedWith('not enough committee participation');
-
-    update.syncAggregate.participation = 0;
-    tx = f.lightClient.connect(admin).processLightClientUpdate(update);
-    await expect(tx).to.be.revertedWith('not enough committee participation');
-  });
-
-  it('checks finality proof', async () => {
-    const [admin] = await ethers.getSigners();
-    const update = newLightClientUpdate(update5788608);
+    const update = newLightClientUpdate(getUpdate638().data, proof638, EXECUTION_STATE_PROOF_638);
 
     update.finalityBranch = update.finalityBranch.slice(1, -1);
     let tx = f.lightClient.connect(admin).processLightClientUpdate(update);
-    await expect(tx).to.be.revertedWith('invalid finality proof');
+    await expect(tx).to.be.revertedWith('bad fin proof');
 
     update.finalityBranch = [];
     tx = f.lightClient.connect(admin).processLightClientUpdate(update);
-    await expect(tx).to.be.revertedWith('no finality proof');
+    await expect(tx).to.be.revertedWith('no fin proof');
   });
 
-  it('checks execution state root proof', async () => {
+  it('rejects update if execution state proof is invalid', async () => {
     const [admin] = await ethers.getSigners();
-    const update = newLightClientUpdate(update5788608, {
-      finalizedExecutionStateRoot: zeroPad('0x01', 32)
-    });
 
+    let update = newLightClientUpdate(getUpdate638().data, proof638, EXECUTION_STATE_PROOF_638);
+    update.finalizedHeader.executionStateRootBranch = [];
     let tx = f.lightClient.connect(admin).processLightClientUpdate(update);
-    await expect(tx).to.be.revertedWith('no execution finality proof');
+    await expect(tx).to.be.revertedWith('no exec fin proof');
 
-    update.finalizedExecutionStateRootBranch = [zeroPad('0x01', 32)];
+    update = newLightClientUpdate(getUpdate638().data, proof638, EXECUTION_STATE_PROOF_638);
+    update.finalizedHeader.executionStateRoot = zeroPad('0x01', 32);
     tx = f.lightClient.connect(admin).processLightClientUpdate(update);
-    await expect(tx).to.be.revertedWith('invalid execution finality proof');
+    await expect(tx).to.be.revertedWith('bad exec fin proof');
   });
 
-  it('checks sync committee proof', async () => {
+  it('rejects update if committee root mapping proof is invalid', async () => {
     const [admin] = await ethers.getSigners();
     const root = getSyncCommitteeRoot(
-      updatePeriod706.next_sync_committee.pubkeys,
-      updatePeriod706.next_sync_committee.aggregate_pubkey
+      getUpdate638().data.next_sync_committee.pubkeys,
+      getUpdate638().data.next_sync_committee.aggregate_pubkey
     );
-    const update = newLightClientUpdate(updatePeriod706, {
-      nextSyncCommitteeRoot: root,
-      nextSyncCommitteePoseidonRoot: FAKE_POSEIDON_ROOT_707,
-      nextSyncCommitteeBranch: updatePeriod706.finality_branch
-    });
-
-    // TODO: replace with invalid mapping proof
-    // update.nextSyncCommitteeRootMappingProof = { placeholder: ZERO_BYTES_32 };
-    // let tx = f.lightClient.connect(admin).processLightClientUpdate(update);
-    // await expect(tx).to.be.revertedWith('invalid next sync committee root mapping proof');
-
-    update.nextSyncCommitteeRoot = zeroPad('0x01', 32); // wrong root
+    let update = newLightClientUpdate(getUpdate638().data, proof638, EXECUTION_STATE_PROOF_638);
+    update.nextSyncCommitteeRootMappingProof.a[0] = '0x0';
     let tx = f.lightClient.connect(admin).processLightClientUpdate(update);
-    await expect(tx).to.be.revertedWith('invalid next sync committee proof');
+    await expect(tx).reverted;
 
+    update = newLightClientUpdate(getUpdate638().data, proof638, EXECUTION_STATE_PROOF_638);
+    update.nextSyncCommitteeRoot = zeroPad('0x01', 32); // wrong root
+    tx = f.lightClient.connect(admin).processLightClientUpdate(update);
+    await expect(tx).to.be.revertedWith('bad next sync committee proof');
+
+    update = newLightClientUpdate(getUpdate638().data, proof638, EXECUTION_STATE_PROOF_638);
     update.nextSyncCommitteeRoot = root;
     update.nextSyncCommitteeBranch = [zeroPad('0x01', 32)]; // wrong proof
     tx = f.lightClient.connect(admin).processLightClientUpdate(update);
-    await expect(tx).to.be.revertedWith('invalid next sync committee proof');
+    await expect(tx).to.be.revertedWith('bad next sync committee proof');
 
+    update = newLightClientUpdate(getUpdate638().data, proof638, EXECUTION_STATE_PROOF_638);
     update.nextSyncCommitteeBranch = [];
     tx = f.lightClient.connect(admin).processLightClientUpdate(update);
     await expect(tx).to.be.revertedWith('no next sync committee proof');
   });
 
-  it('checks poseidon root', async () => {
+  it("rejects update if the updates sig poseidon root doesn't match light client's poseidon root", async () => {
     const [admin] = await ethers.getSigners();
-    const update = newLightClientUpdate(update5788608, { poseidonRoot: ZERO_BYTES_32 });
-
+    const update = newLightClientUpdate(getUpdate638().data, proof638, EXECUTION_STATE_PROOF_638);
+    update.syncAggregate.poseidonRoot = zeroPad('0x01', 32);
     const tx = f.lightClient.connect(admin).processLightClientUpdate(update);
-    await expect(tx).to.be.revertedWith('invalid committee poseidon root');
+    await expect(tx).to.be.revertedWith('bad poseidon root');
   });
 
-  it('checks sig proof', async () => {
+  it('rejects update if sig proof is invalid', async () => {
     const [admin] = await ethers.getSigners();
-    const update = newLightClientUpdate(update5788608, {
-      sigProof: { placeholder: ZERO_BYTES_32 } // TODO: replace with real proof
-    });
+    let update = newLightClientUpdate(getUpdate638().data, proof638, EXECUTION_STATE_PROOF_638);
 
+    update.syncAggregate.proof.a[0] = '0x0';
     const tx = f.lightClient.connect(admin).processLightClientUpdate(update);
-    await expect(tx).not.reverted;
-
-    // TODO: invalid proof test
-    // update.syncAggregate.proof = { placeholder: ZERO_BYTES_32 };
-    // tx = f.lightClient.connect(admin).processLightClientUpdate(update);
-    // await expect(tx).revertedWith('invalid bls sig proof');
+    await expect(tx).reverted;
   });
 
-  it('processes finality update', async () => {
+  it('processes update', async () => {
     const [admin] = await ethers.getSigners();
-    const update = newLightClientFinalityUpdate(update5788608);
+    const update = newLightClientUpdate(getUpdate638().data, proof638, EXECUTION_STATE_PROOF_638);
+    const tx = await f.lightClient.connect(admin).processLightClientUpdate(update);
+    const b = getUpdate638().data.finalized_header.beacon;
 
-    const tx = await f.lightClient.connect(admin).processLightClientFinalityUpdate(update);
-    const b = update5788608.finalized_header.beacon;
-    expect(tx).to.emit(f.lightClient, 'HeaderUpdated').withArgs(b.slot, b.state_root, ZERO_BYTES_32, true);
+    // check if finalized header is updated correctly
+    await expect(tx)
+      .to.emit(f.lightClient, 'HeaderUpdated')
+      .withArgs(b.slot, b.state_root, getUpdate638().data.finalized_header.execution.state_root, true);
+    const root639 = getSyncCommitteeRoot(
+      getUpdate638().data.next_sync_committee.pubkeys,
+      getUpdate638().data.next_sync_committee.aggregate_pubkey
+    );
+
     const h = await f.lightClient.connect(admin).finalizedHeader();
     expect(h.slot).equals(b.slot);
     expect(h.stateRoot).equals(b.state_root);
-    const exec = await f.lightClient.connect(admin).finalizedExecutionStateRootAndSlot();
-    expect(exec.root).equals(ZERO_BYTES_32); // TODO: replace with real execution state root
-    expect(exec.slot).equals(0); // TODO: replace with real execution state root slot
-  });
+    const res = await f.lightClient.connect(admin).finalizedExecutionStateRootAndSlot();
+    expect(res.root).equals(getUpdate638().data.finalized_header.execution.state_root);
+    expect(res.slot).equals(getUpdate638().data.finalized_header.beacon.slot);
 
-  it('updates sync committee', async () => {
-    const [admin] = await ethers.getSigners();
-    const sszRoot = getSyncCommitteeRoot(
-      updatePeriod706.next_sync_committee.pubkeys,
-      updatePeriod706.next_sync_committee.aggregate_pubkey
+    // check if committee is updated correctly
+    await expect(tx)
+      .to.emit(f.lightClient, 'SyncCommitteeUpdated')
+      .withArgs(
+        getSyncPeriodBySlot(parseInt(getUpdate638().data.attested_header.beacon.slot)),
+        root639,
+        update.nextSyncCommitteePoseidonRoot
+      );
+    const { currentRoot, nextRoot } = await f.lightClient.connect(admin).latestFinalizedSlotAndCommitteeRoots();
+    const root638 = getSyncCommitteeRoot(
+      update637.data.next_sync_committee.pubkeys,
+      update637.data.next_sync_committee.aggregate_pubkey
     );
-    const poseidonRoot = FAKE_POSEIDON_ROOT_707;
-    const update = newSyncCommitteeUpdate(updatePeriod706, sszRoot, poseidonRoot, {
-      placeholder: ZERO_BYTES_32 // TODO replace with real proof
-    });
-    const tx = await f.lightClient.connect(admin).processSyncCommitteeUpdate(update);
-    const expectedPeriod = getSyncPeriodBySlot(parseInt(updatePeriod706.finalized_header.beacon.slot)) + 1;
-    expect(tx).to.emit(f.lightClient, 'SyncCommitteeUpdated').withArgs(expectedPeriod, sszRoot, poseidonRoot);
+    expect(currentRoot).equal(root638);
+    expect(nextRoot).equal(root639);
   });
 });
+
+function getUpdate638() {
+  return copy(update638);
+}
+
+function copy<T>(o: T): T {
+  const j = JSON.stringify(o);
+  return JSON.parse(j);
+}

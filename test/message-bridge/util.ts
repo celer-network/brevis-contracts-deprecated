@@ -1,7 +1,7 @@
 import { MapDB, Trie } from '@ethereumjs/trie';
 import { Account } from '@ethereumjs/util';
 
-import { BytesLike, arrayify, defaultAbiCoder, keccak256, solidityKeccak256, hexlify, RLP } from 'ethers/lib/utils';
+import { arrayify, BytesLike, defaultAbiCoder, keccak256, RLP, solidityKeccak256 } from 'ethers/lib/utils';
 
 // Make sure this matches solidity!
 const msgFieldTypes = ['uint256', 'address', 'address', 'uint256', 'bytes'];
@@ -14,12 +14,12 @@ export async function encodeMsg(values: any[]) {
 
 // simple helper to return hash result as bytes, not hex string
 export function hash2bytes(msg: BytesLike): Uint8Array {
-  return arrayify(keccak256(msg))
+  return arrayify(keccak256(msg));
 }
 
 // use solidityKeccak256
 export function solHash2Bytes(types: string[], vals: any[]): Uint8Array {
-  return arrayify(solidityKeccak256(types, vals))
+  return arrayify(solidityKeccak256(types, vals));
 }
 
 /*
@@ -35,20 +35,20 @@ export async function generateProof(msg: string, addr: string) {
   const decoded = defaultAbiCoder.decode(msgFieldTypes, msg);
   // hash of msg is saved in solidity map, key is nonce, per solidity storage layout,
   // storage slot corresponding to a mapping key k is located at keccak256(k . p) where . is concatenation, p is the map's slot
-  // in our case, its slot is 1 (must be full 32 bytes/uint256), for msg.nonce = 0x12, its slot is
-  // keccak256(0x0000000000000000000000000000000000000000000000000000000000000012_0000000000000000000000000000000000000000000000000000000000000001)
+  // in our case, its slot is 2 (must be full 32 bytes/uint256), for msg.nonce = 0x12, its slot is
+  // keccak256(0x0000000000000000000000000000000000000000000000000000000000000012_0000000000000000000000000000000000000000000000000000000000000002)
   // https://playground.ethers.org/
-  const slot = solHash2Bytes(['uint256', 'uint256'], [decoded[0], 1]);
+  const slot = solHash2Bytes(['uint256', 'uint256'], [decoded[0], 2]);
   const triePath = Buffer.from(slot); // no need to manually hash again b/c Trie has useKeyHashing true
-  
+
   //  because contract save msg hash as map value
   //  rlp encode msg hash
-  const rlpEncodedHex = RLP.encode(keccak256(msg)).replace("0x", "")
+  const rlpEncodedHex = RLP.encode(keccak256(msg)).replace('0x', '');
   const rlpEncodedUInt8Array = new Uint8Array(rlpEncodedHex.length / 2);
   for (let i = 0; i < rlpEncodedHex.length; i += 2) {
-    rlpEncodedUInt8Array[i / 2] = parseInt(rlpEncodedHex.substring(i, i + 2), 16)
+    rlpEncodedUInt8Array[i / 2] = parseInt(rlpEncodedHex.substring(i, i + 2), 16);
   }
-  await storageTrie.put(triePath, Buffer.from(rlpEncodedUInt8Array)); 
+  await storageTrie.put(triePath, Buffer.from(rlpEncodedUInt8Array));
 
   // add more mock nodes so we have a branch for proof, path and value don't matter
   await storageTrie.put(Buffer.from('1'), Buffer.from('random value'));

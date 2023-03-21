@@ -29,13 +29,11 @@ contract MockMessageBridge {
     function initialize(
         uint64 slot,
         address _messageBridgeAddress,
-        address otherSideBridgeAddress,
         address _mockLightClient,
         bytes32 _mockStateRoot
     ) public {
         messageBridge = MessageBridge(_messageBridgeAddress);
         lightClient = MockLightClient(_mockLightClient);
-        messageBridge.setRemoteMessageBridge(address(otherSideBridgeAddress));
         lightClient.submitHeader(slot, _mockStateRoot);
     }
 

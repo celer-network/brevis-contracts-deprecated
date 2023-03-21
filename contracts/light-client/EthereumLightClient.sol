@@ -11,6 +11,8 @@ import "./SSZ.sol";
 import "./Constants.sol";
 import "./Types.sol";
 
+import "hardhat/console.sol";
+
 contract EthereumLightClient is IEthereumLightClient, LightClientStore, Ownable {
     event HeaderUpdated(uint256 slot, bytes32 stateRoot, bytes32 executionStateRoot, bool finalized);
     event SyncCommitteeUpdated(uint256 period, bytes32 sszRoot, bytes32 poseidonRoot);
@@ -222,6 +224,17 @@ contract EthereumLightClient is IEthereumLightClient, LightClientStore, Ownable 
                 finalizedExecutionStateRoot = update.finalizedHeader.executionStateRoot;
                 finalizedExecutionStateRootSlot = update.finalizedHeader.beacon.slot;
             }
+            emit HeaderUpdated(
+                update.finalizedHeader.beacon.slot,
+                update.finalizedHeader.beacon.stateRoot,
+                update.finalizedHeader.executionStateRoot,
+                true
+            );
+        } else if (
+            update.finalizedHeader.beacon.slot == finalizedHeader.slot && finalizedExecutionStateRoot == bytes32(0)
+        ) {
+            finalizedExecutionStateRoot = update.finalizedHeader.executionStateRoot;
+            finalizedExecutionStateRootSlot = update.finalizedHeader.beacon.slot;
             emit HeaderUpdated(
                 update.finalizedHeader.beacon.slot,
                 update.finalizedHeader.beacon.stateRoot,
