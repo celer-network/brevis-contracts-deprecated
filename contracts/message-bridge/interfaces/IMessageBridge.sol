@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicensed
+// SPDX-License-Identifier: MIT
 
 pragma solidity 0.8.18;
 
@@ -17,11 +17,7 @@ interface IMessageBridge {
 
     function lightClient() external view returns (IEthereumLightClient);
 
-    function sendMessage(
-        address receiver,
-        bytes calldata message,
-        uint256 gasLimit
-    ) external returns (bytes32);
+    function sendMessage(address receiver, bytes calldata message, uint256 gasLimit) external returns (bytes32);
 
     function executeMessage(
         bytes calldata message,

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicensed
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
 import "../interfaces/IMessageBridge.sol";
@@ -13,11 +13,7 @@ contract MessageTest {
         messageBridge = IMessageBridge(msgbr);
     }
 
-    function sendMessage(
-        address receiver,
-        bytes calldata message,
-        uint256 gasLimit
-    ) external {
+    function sendMessage(address receiver, bytes calldata message, uint256 gasLimit) external {
         bytes32 msgHash = messageBridge.sendMessage(receiver, message, gasLimit);
         emit MessageSent(msgHash);
     }
