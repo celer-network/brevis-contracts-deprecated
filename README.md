@@ -1,4 +1,4 @@
-# zkBridge
+# Contract Repo for Brevis: An Omnichain ZK Data Attestation Platform
 
 ## Light Client Contracts
 
