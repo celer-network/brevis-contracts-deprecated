@@ -3,14 +3,13 @@ pragma solidity 0.8.18;
 
 interface IReceiptVerifier {
     struct ReceiptInfo {
-        bytes status;
-        uint64 cumulativeGasUsed;
-        bytes bloom;
-        LogInfo[] logs;
-        uint32 blkNum;
-        bytes32 blkHash;
-        uint64 blkTime;
+        bool success;
         uint64 chainId;
+        bytes32 blkHash;
+        uint32 blkNum;
+        uint64 blkTime;
+        LogInfo[] logs;
+        // TODO: add transaction index
     }
 
     struct LogInfo {

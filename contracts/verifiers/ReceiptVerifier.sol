@@ -105,9 +105,9 @@ contract ReceiptVerifier is IReceiptVerifier, Ownable {
         require(txType == 2, "not a DynamicFeeTxType");
         bytes memory rlpData = receiptRaw[1:];
         RLPReader.RLPItem[] memory values = rlpData.toRlpItem().toList();
-        info.status = values[0].toBytes();
-        info.cumulativeGasUsed = uint64(values[1].toUint());
-        info.bloom = values[2].toBytes();
+        if (bytes1(values[0].toBytes()) == 0x01) {
+            info.success = true;
+        }
 
         RLPReader.RLPItem[] memory rlpLogs = values[3].toList();
         LogInfo[] memory logInfos = new LogInfo[](rlpLogs.length);
