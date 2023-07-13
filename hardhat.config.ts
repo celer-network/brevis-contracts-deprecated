@@ -18,6 +18,8 @@ const goerliEndpoint = process.env.GOERLI_ENDPOINT || DEFAULT_ENDPOINT;
 const goerliPrivateKey = process.env.GOERLI_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const bscTestEndpoint = process.env.BSC_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const bscTestPrivateKey = process.env.BSC_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const avalancheTestEndpoint = process.env.AVALANCHE_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const avalancheTestPrivateKey = process.env.AVALANCHE_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
@@ -34,6 +36,10 @@ const config: HardhatUserConfig = {
     bscTest: {
       url: bscTestEndpoint,
       accounts: [`0x${bscTestPrivateKey}`]
+    },
+    avalancheTest: {
+      url: avalancheTestEndpoint,
+      accounts: [`0x${avalancheTestPrivateKey}`]
     }
   },
   namedAccounts: {
@@ -48,8 +54,13 @@ const config: HardhatUserConfig = {
         enabled: true,
         runs: 800
       },
-      viaIR: true,
+      viaIR: true
     }
+  },
+  gasReporter: {
+    enabled: process.env.REPORT_GAS === 'true' ? true : false,
+    noColors: true,
+    outputFile: 'reports/gas_usage/summary.txt'
   },
   typechain: {
     outDir: 'typechain',
@@ -58,7 +69,8 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       goerli: process.env.ETHERSCAN_API_KEY,
-      bscTestnet: process.env.BSCSCAN_API_KEY
+      bscTestnet: process.env.BSCSCAN_API_KEY,
+      avalancheFujiTestnet: process.env.SNOWTRACE_API_KEY
     }
   }
 };
