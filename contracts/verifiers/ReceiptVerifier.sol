@@ -51,6 +51,7 @@ contract ReceiptVerifier is IReceiptVerifier, Ownable {
         bytes calldata auxiBlkVerifyInfo
     ) external returns (ReceiptInfo memory info) {
         info = verifyReceipt(receiptRaw, proofData, auxiBlkVerifyInfo);
+        // TODO, will emit <chain_id, block_num, tx_index> instead
         emit VerifiedReceipt(info.chainId, keccak256(receiptRaw));
     }
 
