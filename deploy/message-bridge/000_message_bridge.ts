@@ -5,21 +5,16 @@ import { verify } from '../utils/utils';
 
 dotenv.config();
 
-const gasLimit = process.env.GAS_LIMIT_PER_TX;
-const lightclient = process.env.LIGHT_CLIENT;
-
 const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const args = [lightclient, gasLimit];
   const deployment = await deploy('MessageBridge', {
     from: deployer,
-    log: true,
-    args: args
+    log: true
   });
-  await verify(hre, deployment, args);
+  await verify(hre, deployment);
 };
 
 deployFunc.tags = ['MessageBridge'];

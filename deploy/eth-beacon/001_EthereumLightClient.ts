@@ -1,7 +1,7 @@
 import * as dotenv from 'dotenv';
-import { DeployFunction } from 'hardhat-deploy/types';
-import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { verify } from '../utils/utils';
+import {DeployFunction} from 'hardhat-deploy/types';
+import {HardhatRuntimeEnvironment} from 'hardhat/types';
+import {verify} from '../utils/utils';
 
 dotenv.config();
 
@@ -10,25 +10,17 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const header = {
-    slot: '5211007', // period 636
-    proposerIndex: '244391',
-    parentRoot: '0x675470c38e0a74f5cf147529a683323c372699a8d8f493a7540afbe3ee823df7',
-    stateRoot: '0xec81ad00910a457dad9fcea92130db7054ba50371a8e6813643b974d315ee2d8',
-    bodyRoot: '0x8f929507493ec582e9de84159018eb40a06389007a6af3b06b3dd48eb7a28534'
-  };
-
-  const zkVerifier = await deployments.get('ZkVerifier');
+  const verifier = await deployments.get('BeaconVerifier');
 
   const args = [
-    1616508000,
-    '0x043db0d9a83813551ee2f33450d23797757d430911a9320530ad8a0eabc43efb',
-    [0, 36660, 112260, 162304],
-    ['0x00001020', '0x01001020', '0x02001020', '0x03001020'],
-    header,
-    '0x28bfcd34b4a658a55a6fecf00126c9a3f7e468bbf76ac08af1472016c9903a81', // period 636 sha root
-    '0x1d997dff5d143d9860a9f72dc7ee01faa0bc3a335d88749668d0d80b770e8643', // period 636 poseidon root
-    zkVerifier.address
+    1606824023,
+    '0x4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95',
+    [0, 74240, 144896, 194048],
+    ['0x00000000', '0x01000000', '0x02000000', '0x03000000'],
+    6513843,
+    '0xdfd73daafb81c19816db1c8d74639b64c40e0e986a9bad4fb0156b6a45bdb734', // period 795 sha root
+    '0x0f51f5a9fbce6ada1dafcae5325588c7260b1e452e9821e59df45fa396bd37f2', // period 795 poseidon root
+    verifier.address
   ];
 
   const deployment = await deploy('EthereumLightClient', {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
 import "../libraries/RLPWriter.sol";
@@ -58,6 +59,7 @@ contract PoALibTest {
     }
 
     function mockRecoverAddress(bytes32 message, bytes memory signature) public pure returns (address) {
-        return ECDSA.recover(message, signature);
+        bytes32 h = ECDSA.toEthSignedMessageHash(message);
+        return ECDSA.recover(h, signature);
     }
 }

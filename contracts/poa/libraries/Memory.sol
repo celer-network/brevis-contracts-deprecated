@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
 library Memory {
@@ -7,13 +8,13 @@ library Memory {
      * @param from the first index to be copied, data included
      * @param to the last index(to be copied) + 1, data excluded.
      */
-    function range(bytes memory source, uint256 from, uint256 to) internal  pure returns (bytes memory) {
+    function range(bytes memory source, uint256 from, uint256 to) internal pure returns (bytes memory) {
         if (from >= to) {
             return "";
         }
 
-        require(from < source.length && from >= 0, 'Memory: from out of bounds');
-        require(to <= source.length && to >= 0, 'Memory: to out of bounds');
+        require(from < source.length && from >= 0, "Memory: from out of bounds");
+        require(to <= source.length && to >= 0, "Memory: to out of bounds");
 
         bytes memory result = new bytes(to - from);
 

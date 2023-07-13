@@ -4,111 +4,216 @@ pragma solidity 0.8.18;
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IMessageBridge.sol";
+import "./interfaces/IMessageReceiverApp.sol";
 import "./libraries/RLPReader.sol";
 import "./libraries/MerkleProofTree.sol";
+import "./libraries/MsgLib.sol";
 import "../interfaces/IEthereumLightClient.sol";
+import "../verifiers/interfaces/ISlotValueVerifier.sol";
 
 contract MessageBridge is IMessageBridge, ReentrancyGuard, Ownable {
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
-    // storage at sender side
-    mapping(uint256 => bytes32) public sentMessages;
+
+    /* Sender side (source chain) storage */
+    mapping(uint64 => bytes32) public sentMessages; // nonce -> messageId
     uint256 constant SENT_MESSAGES_STORAGE_SLOT = 2;
-    uint256 public nonce;
-    uint256 public gasLimitPerTransaction;
+    uint64 public nonce;
 
-    // storage at receiver side
-    IEthereumLightClient public lightClient;
-    mapping(bytes32 => MessageStatus) public receivedMessages;
-    address public remoteMessageBridge;
-    bytes32 public remoteMessageBridgeHash;
-    bool private initialized;
+    /* Receiver side (dest chain) storage */
+    mapping(bytes32 => MessageStatus) public receivedMessages; // messageId -> status
+    mapping(uint256 => IEthereumLightClient) public lightClients; // chainId -> light client
+    mapping(uint256 => address) public remoteMessageBridges; // chainId -> source chain bridge
+    mapping(uint256 => bytes32) public remoteMessageBridgeHashes;
+    ISlotValueVerifier public slotValueVerifier;
+    // minimum amount of gas needed by this contract before it tries to deliver a message to the target.
+    uint256 public preExecuteMessageGasUsage;
 
-    // struct to avoid "stack too deep"
-    struct MessageVars {
-        bytes32 messageHash;
-        uint256 nonce;
-        address sender;
-        address receiver;
-        uint256 gasLimit;
-        bytes data;
+    /****************************************
+     * Sender side (source chain) functions *
+     ****************************************/
+
+    function sendMessage(uint64 _dstChainId, address _receiver, bytes calldata _message) external returns (bytes32) {
+        bytes32 messageId = MsgLib.computeMessageId(
+            nonce,
+            msg.sender,
+            _receiver,
+            uint64(block.chainid),
+            _dstChainId,
+            _message
+        );
+        sentMessages[nonce] = messageId;
+        emit MessageSent(messageId, nonce++, _dstChainId, msg.sender, _receiver, _message);
+        return messageId;
     }
 
-    constructor(address _lightClient, uint256 _gasLimitPerTransaction) {
-        lightClient = IEthereumLightClient(_lightClient);
-        gasLimitPerTransaction = _gasLimitPerTransaction;
-    }
-
-    function sendMessage(address receiver, bytes calldata data, uint256 gasLimit) external returns (bytes32) {
-        require(gasLimit <= gasLimitPerTransaction, "MessageBridge: exceed gas limit");
-        bytes memory message = abi.encode(nonce, msg.sender, receiver, gasLimit, data);
-        bytes32 messageHash = keccak256(message);
-        sentMessages[nonce] = messageHash;
-        emit MessageSent(messageHash, nonce++, message);
-        return messageHash;
-    }
+    /****************************************
+     * Receiver side (dest chain) functions *
+     ****************************************/
 
     function executeMessage(
-        bytes calldata message,
-        bytes[] calldata accountProof,
-        bytes[] calldata storageProof
+        uint64 _srcChainId,
+        uint64 _nonce,
+        address _sender,
+        address _receiver,
+        bytes calldata _message,
+        bytes[] calldata _accountProof,
+        bytes[] calldata _storageProof
     ) external nonReentrant returns (bool success) {
-        MessageVars memory vars;
-        vars.messageHash = keccak256(message);
-        require(receivedMessages[vars.messageHash] == MessageStatus.NEW, "MessageBridge: message already executed");
+        (bytes32 messageId, bytes32 slotKeyHash) = _getSlotAndMessageId(
+            _srcChainId,
+            _nonce,
+            _sender,
+            _receiver,
+            _message
+        );
+        _verifyAccountAndStorageProof(_srcChainId, messageId, slotKeyHash, _accountProof, _storageProof);
+        return _executeMessage(messageId, _srcChainId, _nonce, _sender, _receiver, _message);
+    }
 
-        // verify the storageProof and message
+    function executeMessageWithZkProof(
+        uint64 _srcChainId,
+        uint64 _nonce,
+        address _sender,
+        address _receiver,
+        bytes calldata _message,
+        bytes calldata _zkProofData,
+        bytes calldata _blkVerifyInfo
+    ) external nonReentrant returns (bool success) {
+        (bytes32 messageId, bytes32 slotKeyHash) = _getSlotAndMessageId(
+            _srcChainId,
+            _nonce,
+            _sender,
+            _receiver,
+            _message
+        );
+        _verifyZkSlotValueProof(_srcChainId, messageId, slotKeyHash, _zkProofData, _blkVerifyInfo);
+        return _executeMessage(messageId, _srcChainId, _nonce, _sender, _receiver, _message);
+    }
+
+    function setLightClient(uint64 _chainId, address _lightClient) external onlyOwner {
+        lightClients[_chainId] = IEthereumLightClient(_lightClient);
+    }
+
+    function setSlotValueVerifier(address _slotValueVerifier) external onlyOwner {
+        slotValueVerifier = ISlotValueVerifier(_slotValueVerifier);
+    }
+
+    function setRemoteMessageBridge(uint64 _chainId, address _remoteMessageBridge) external onlyOwner {
+        remoteMessageBridges[_chainId] = _remoteMessageBridge;
+        remoteMessageBridgeHashes[_chainId] = keccak256(abi.encodePacked(_remoteMessageBridge));
+    }
+
+    function setPreExecuteMessageGasUsage(uint256 _usage) public onlyOwner {
+        preExecuteMessageGasUsage = _usage;
+    }
+
+    function getExecutionStateRootAndSlot(uint64 _chainId) public view returns (bytes32 root, uint64 slot) {
+        return lightClients[_chainId].optimisticExecutionStateRootAndSlot();
+    }
+
+    function _getSlotAndMessageId(
+        uint64 _srcChainId,
+        uint64 _nonce,
+        address _sender,
+        address _receiver,
+        bytes calldata _message
+    ) private view returns (bytes32 messageId, bytes32 slotKeyHash) {
+        messageId = MsgLib.computeMessageId(_nonce, _sender, _receiver, _srcChainId, uint64(block.chainid), _message);
+        require(receivedMessages[messageId] == MessageStatus.Null, "MessageBridge: message already executed");
+        slotKeyHash = keccak256(abi.encode(keccak256(abi.encode(_nonce, SENT_MESSAGES_STORAGE_SLOT))));
+    }
+
+    function _verifyAccountAndStorageProof(
+        uint64 _srcChainId,
+        bytes32 _messageId,
+        bytes32 _slotKeyHash,
+        bytes[] calldata _accountProof,
+        bytes[] calldata _storageProof
+    ) private view {
         require(
-            _retrieveStorageRoot(accountProof) == keccak256(storageProof[0]),
+            _retrieveStorageRoot(_srcChainId, _accountProof) == keccak256(_storageProof[0]),
             "MessageBridge: invalid storage root"
         );
-
-        (vars.nonce, vars.sender, vars.receiver, vars.gasLimit, vars.data) = abi.decode(
-            message,
-            (uint256, address, address, uint256, bytes)
-        );
-
-        bytes32 key = keccak256(abi.encode(keccak256(abi.encode(vars.nonce, SENT_MESSAGES_STORAGE_SLOT))));
-        bytes memory proof = MerkleProofTree.read(key, storageProof);
-
-        require(bytes32(proof.toRlpItem().toUint()) == vars.messageHash, "MessageBridge: invalid message hash");
-
-        // execute message
-        require((gasleft() * 63) / 64 > vars.gasLimit + 40000, "MessageBridge: insufficient gas");
-        bytes memory recieveCall = abi.encodeWithSignature("receiveMessage(address,bytes)", vars.sender, vars.data);
-        (success, ) = vars.receiver.call{gas: vars.gasLimit}(recieveCall);
-        receivedMessages[vars.messageHash] = success ? MessageStatus.EXECUTED : MessageStatus.FAILED;
-        emit MessageExecuted(vars.messageHash, vars.nonce, message, success);
-        return success;
+        bytes memory proof = MerkleProofTree.read(_slotKeyHash, _storageProof);
+        require(bytes32(proof.toRlpItem().toUint()) == _messageId, "MessageBridge: invalid message hash");
     }
 
-    function finalizedExecutionStateRootAndSlot() public view returns (bytes32 root, uint64 slot) {
-        return lightClient.finalizedExecutionStateRootAndSlot();
-    }
-
-    function _retrieveStorageRoot(bytes[] calldata accountProof) private view returns (bytes32) {
+    function _retrieveStorageRoot(uint64 _srcChainId, bytes[] calldata _accountProof) private view returns (bytes32) {
         // verify accountProof and get storageRoot
-        (bytes32 executionStateRoot, ) = finalizedExecutionStateRootAndSlot();
+        (bytes32 executionStateRoot, ) = getExecutionStateRootAndSlot(_srcChainId);
         require(executionStateRoot != bytes32(0), "MessageBridge: execution state root not found");
-        require(executionStateRoot == keccak256(accountProof[0]), "MessageBridge: invalid account proof root");
+        require(executionStateRoot == keccak256(_accountProof[0]), "MessageBridge: invalid account proof root");
 
         // get storageRoot
-        bytes memory accountInfo = MerkleProofTree.read(remoteMessageBridgeHash, accountProof);
+        bytes memory accountInfo = MerkleProofTree.read(remoteMessageBridgeHashes[_srcChainId], _accountProof);
         RLPReader.RLPItem[] memory items = accountInfo.toRlpItem().toList();
         require(items.length == 4, "MessageBridge: invalid account decoded from RLP");
         return bytes32(items[2].toUint());
     }
 
-    function setGasLimitPerTransaction(uint256 _gasLimitPerTransaction) external onlyOwner {
-        gasLimitPerTransaction = _gasLimitPerTransaction;
+    function _verifyZkSlotValueProof(
+        uint64 _srcChainId,
+        bytes32 _messageId,
+        bytes32 _slotKeyHash,
+        bytes calldata _zkProofData,
+        bytes calldata _blkVerifyInfo
+    ) private view {
+        ISlotValueVerifier.SlotInfo memory slotInfo = slotValueVerifier.verifySlotValue(
+            _srcChainId,
+            _zkProofData,
+            _blkVerifyInfo
+        );
+        require(slotInfo.slotKeyHash == _slotKeyHash, "MessageBridge: slot key not match");
+        require(slotInfo.slotValue == _messageId, "MessageBridge: slot value not match");
+        require(slotInfo.addrHash == remoteMessageBridgeHashes[_srcChainId], "MessageBridge: src contract not match");
     }
 
-    function setLightClient(address _lightClient) external onlyOwner {
-        lightClient = IEthereumLightClient(_lightClient);
+    function _executeMessage(
+        bytes32 _messageId,
+        uint64 _srcChainId,
+        uint64 _nonce,
+        address _sender,
+        address _receiver,
+        bytes calldata _message
+    ) private returns (bool success) {
+        // execute message
+        bytes memory recieveCall = abi.encodeWithSelector(
+            IMessageReceiverApp.executeMessage.selector,
+            _srcChainId,
+            _sender,
+            _message,
+            msg.sender
+        );
+        uint256 gasLeftBeforeExecution = gasleft();
+        (bool ok, bytes memory res) = _receiver.call(recieveCall);
+        if (ok) {
+            success = abi.decode((res), (bool));
+        } else {
+            _handleExecutionRevert(_messageId, gasLeftBeforeExecution, res);
+        }
+        receivedMessages[_messageId] = success ? MessageStatus.Success : MessageStatus.Fail;
+        emit MessageExecuted(_messageId, _nonce, _srcChainId, _sender, _receiver, _message, success);
+        return success;
     }
 
-    function setRemoteMessageBridge(address _remoteMessageBridge) external onlyOwner {
-        remoteMessageBridge = _remoteMessageBridge;
-        remoteMessageBridgeHash = keccak256(abi.encodePacked(remoteMessageBridge));
+    function _handleExecutionRevert(
+        bytes32 messageId,
+        uint256 _gasLeftBeforeExecution,
+        bytes memory _returnData
+    ) private {
+        uint256 gasLeftAfterExecution = gasleft();
+        uint256 maxTargetGasLimit = block.gaslimit - preExecuteMessageGasUsage;
+        if (_gasLeftBeforeExecution < maxTargetGasLimit && gasLeftAfterExecution <= _gasLeftBeforeExecution / 64) {
+            // if this happens, the execution must have not provided sufficient gas limit,
+            // then the tx should revert instead of recording a non-retryable failure status
+            // https://github.com/wolflo/evm-opcodes/blob/main/gas.md#aa-f-gas-to-send-with-call-operations
+            assembly {
+                invalid()
+            }
+        }
+        string memory revertMsg = MsgLib.checkRevertMsg(_returnData);
+        // otherwiase, emit revert message, return and mark the execution as failed (non-retryable)
+        emit MessageCallReverted(messageId, revertMsg);
     }
 }

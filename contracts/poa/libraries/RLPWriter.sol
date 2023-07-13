@@ -1,4 +1,5 @@
-// Inspired: https://github.com/ethereum-optimism/optimism/blob/develop/packages/contracts/contracts/libraries/rlp/Lib_RLPWriter.sol
+// SPDX-License-Identifier: MIT
+// Inspired: https://github.com/ethereum-optimism/optimism/blob/v1.0.9/packages/contracts-bedrock/contracts/libraries/rlp/RLPWriter.sol
 
 pragma solidity 0.8.18;
 
@@ -102,7 +103,7 @@ library RLPWriter {
             // 0xc0 + 55 = 0xf7
             encoded[0] = bytes1(uint8(_offset) + 55 + uint8(hexLengthForInputLength));
             for (index = 1; index <= hexLengthForInputLength; index++) {
-                encoded[index] = bytes1(uint8((_length / (256**(hexLengthForInputLength - index))) % 256));
+                encoded[index] = bytes1(uint8((_length / (256 ** (hexLengthForInputLength - index))) % 256));
             }
         }
 
