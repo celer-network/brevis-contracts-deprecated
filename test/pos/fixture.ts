@@ -1,10 +1,12 @@
 import { Fixture } from 'ethereum-waffle';
 import { Wallet } from 'ethers';
 import { waffle } from 'hardhat';
+import { AnchorBlocks } from '../../typechain';
 import { EthereumLightClient } from '../../typechain/EthereumLightClient';
-import { deployLightClient } from './deploy';
+import { deployAnchorBlocks, deployLightClient } from './deploy';
 export interface LightClientFixture {
   lightClient: EthereumLightClient;
+  anchorBlocks: AnchorBlocks;
 }
 
 export function loadFixture<T>(fixture: Fixture<T>): Promise<T> {
@@ -14,5 +16,6 @@ export function loadFixture<T>(fixture: Fixture<T>): Promise<T> {
 
 export const lightClientFixture = async ([admin]: Wallet[]): Promise<LightClientFixture> => {
   const lc = await deployLightClient(admin);
-  return { lightClient: lc };
+  const ab = await deployAnchorBlocks(admin, lc.address);
+  return { lightClient: lc, anchorBlocks: ab };
 };

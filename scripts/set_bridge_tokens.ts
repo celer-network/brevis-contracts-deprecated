@@ -1,19 +1,27 @@
 import * as dotenv from 'dotenv';
-import { ethers } from 'hardhat';
-import { PegBridge } from '../typechain/PegBridge';
+import hre, {ethers} from 'hardhat';
+import {PegBridge} from '../typechain/PegBridge';
 
 dotenv.config();
 
-const vaultTokens = process.env.VAULT_TOKENS as string;
-const bridgeTokens = process.env.BRIDGE_TOKENS as string;
+const vaultTokens = ['0x7A5FaC2b0392B1A017Ac720739E2E352934C93a6'];
+const bridgeTokens: { [addrs: number]: string[] } = {
+  97: ['0x820a9347993763B0710a1ed9A3D40E257f57ebd2'],
+  43113: ['0xaBF86F827164D10757fFEF396FEBf4c8631918d7']
+};
 
 const init = async () => {
   const [signer] = await ethers.getSigners();
+  const chainId = parseInt(await hre.getChainId(), 10);
   const bridge = await (await ethers.getContract<PegBridge>('PegBridge')).connect(signer);
-  console.log(`set peg bridge with vault tokens ${vaultTokens} bridge tokens ${bridgeTokens}`);
-  const tx = await bridge.setBridgeTokens(vaultTokens.split(','), bridgeTokens.split(','));
+  const pegTokens = bridgeTokens[chainId];
+  if (vaultTokens.length !== pegTokens?.length) {
+    console.error('invalid tokens length');
+    return;
+  }
+  const tx = await bridge.setBridgeTokens(vaultTokens, pegTokens);
+  console.log(`setBridgeTokens(${vaultTokens}, ${pegTokens}) tx:`, tx.hash);
   await tx.wait();
-  console.log('setBridgeTokens() tx:', tx.hash);
 };
 
 init();

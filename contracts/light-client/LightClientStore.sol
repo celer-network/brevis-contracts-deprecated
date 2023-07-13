@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-import "./Types.sol";
-import "./IZkVerifier.sol";
+import "./common/Types.sol";
+import "../verifiers/interfaces/IBeaconVerifier.sol";
 
 abstract contract LightClientStore {
     // beacon chain genesis information
     uint256 immutable GENESIS_TIME;
     bytes32 immutable GENESIS_VALIDATOR_ROOT;
 
-    // light client store
-    BeaconBlockHeader public finalizedHeader;
+    uint64 public finalizedSlot;
     bytes32 public finalizedExecutionStateRoot;
-    uint64 public finalizedExecutionStateRootSlot;
+
+    uint64 public optimisticSlot;
+    bytes32 public optimisticExecutionStateRoot;
 
     bytes32 public currentSyncCommitteeRoot;
     bytes32 public currentSyncCommitteePoseidonRoot;
@@ -26,14 +27,14 @@ abstract contract LightClientStore {
     bytes4[] public forkVersions;
 
     // zk verifier
-    IZkVerifier public zkVerifier; // contract too big. need to move this one out
+    IBeaconVerifier public zkVerifier; // contract too big. need to move this one out
 
     constructor(
         uint256 genesisTime,
         bytes32 genesisValidatorsRoot,
         uint64[] memory _forkEpochs,
         bytes4[] memory _forkVersions,
-        BeaconBlockHeader memory _finalizedHeader,
+        uint64 _finalizedSlot,
         bytes32 syncCommitteeRoot,
         bytes32 syncCommitteePoseidonRoot,
         address _zkVerifier
@@ -42,9 +43,9 @@ abstract contract LightClientStore {
         GENESIS_VALIDATOR_ROOT = genesisValidatorsRoot;
         forkEpochs = _forkEpochs;
         forkVersions = _forkVersions;
-        finalizedHeader = _finalizedHeader;
+        finalizedSlot = _finalizedSlot;
         currentSyncCommitteeRoot = syncCommitteeRoot;
         currentSyncCommitteePoseidonRoot = syncCommitteePoseidonRoot;
-        zkVerifier = IZkVerifier(_zkVerifier);
+        zkVerifier = IBeaconVerifier(_zkVerifier);
     }
 }

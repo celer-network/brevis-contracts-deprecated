@@ -3,18 +3,15 @@ pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../interfaces/IEthereumLightClient.sol";
-
-import "./IZkVerifier.sol";
+import "./interfaces/IEthereumLightClient.sol";
 import "./LightClientStore.sol";
-import "./SSZ.sol";
-import "./Constants.sol";
-import "./Types.sol";
-
-import "hardhat/console.sol";
+import "./common/Helpers.sol";
+import "./common/Constants.sol";
+import "./common/Types.sol";
 
 contract EthereumLightClient is IEthereumLightClient, LightClientStore, Ownable {
-    event HeaderUpdated(uint256 slot, bytes32 stateRoot, bytes32 executionStateRoot, bool finalized);
+    event OptimisticUpdate(uint256 slot, bytes32 executionStateRoot);
+    event FinalityUpdate(uint256 slot, bytes32 executionStateRoot);
     event SyncCommitteeUpdated(uint256 period, bytes32 sszRoot, bytes32 poseidonRoot);
     event ForkVersionUpdated(uint64 epoch, bytes4 forkVersion);
 
@@ -23,7 +20,7 @@ contract EthereumLightClient is IEthereumLightClient, LightClientStore, Ownable 
         bytes32 genesisValidatorsRoot,
         uint64[] memory _forkEpochs,
         bytes4[] memory _forkVersions,
-        BeaconBlockHeader memory _finalizedHeader,
+        uint64 _finalizedSlot,
         bytes32 syncCommitteeRoot,
         bytes32 syncCommitteePoseidonRoot,
         address _zkVerifier
@@ -33,7 +30,7 @@ contract EthereumLightClient is IEthereumLightClient, LightClientStore, Ownable 
             genesisValidatorsRoot,
             _forkEpochs,
             _forkVersions,
-            _finalizedHeader,
+            _finalizedSlot,
             syncCommitteeRoot,
             syncCommitteePoseidonRoot,
             _zkVerifier
@@ -45,11 +42,15 @@ contract EthereumLightClient is IEthereumLightClient, LightClientStore, Ownable 
         view
         returns (uint64 slot, bytes32 currentRoot, bytes32 nextRoot)
     {
-        return (finalizedHeader.slot, currentSyncCommitteeRoot, nextSyncCommitteeRoot);
+        return (finalizedSlot, currentSyncCommitteeRoot, nextSyncCommitteeRoot);
+    }
+
+    function optimisticExecutionStateRootAndSlot() external view returns (bytes32 root, uint64 slot) {
+        return (optimisticExecutionStateRoot, optimisticSlot);
     }
 
     function finalizedExecutionStateRootAndSlot() external view returns (bytes32 root, uint64 slot) {
-        return (finalizedExecutionStateRoot, finalizedExecutionStateRootSlot);
+        return (finalizedExecutionStateRoot, finalizedSlot);
     }
 
     function updateForkVersion(uint64 epoch, bytes4 forkVersion) external onlyOwner {
@@ -60,39 +61,41 @@ contract EthereumLightClient is IEthereumLightClient, LightClientStore, Ownable 
     }
 
     function processLightClientForceUpdate() external onlyOwner {
-        require(currentSlot() > finalizedHeader.slot + UPDATE_TIMEOUT, "timeout not passed");
+        require(currentSlot() > finalizedSlot + UPDATE_TIMEOUT, "timeout not passed");
         require(bestValidUpdate.attestedHeader.beacon.slot > 0, "no best valid update");
 
         // Forced best update when the update timeout has elapsed.
         // Because the apply logic waits for finalizedHeader.beacon.slot to indicate sync committee fin,
         // the attestedHeader may be treated as finalizedHeader in extended periods of non-fin
         // to guarantee progression into later sync committee periods according to isBetterUpdate().
-        if (bestValidUpdate.finalizedHeader.beacon.slot <= finalizedHeader.slot) {
+        if (bestValidUpdate.finalizedHeader.beacon.slot <= finalizedSlot) {
             bestValidUpdate.finalizedHeader = bestValidUpdate.attestedHeader;
         }
-        applyLightClientUpdate(bestValidUpdate);
+        applyFinalityUpdate(bestValidUpdate);
         delete bestValidUpdate;
     }
 
     function processLightClientUpdate(LightClientUpdate memory update) public {
+        bool quorumReached = hasSupermajority(update.syncAggregate.participation);
+        bool betterUpdate = isBetterUpdate(update, bestValidUpdate);
+        require(betterUpdate || quorumReached, "quorum not reached");
         validateLightClientUpdate(update);
 
         // Update the best update in case we have to force-update to it if the timeout elapses
-        if (isBetterUpdate(update, bestValidUpdate)) {
+        if (betterUpdate) {
             bestValidUpdate = update;
         }
-
-        // Apply fin update
-        bool updateHasFinalizedNextSyncCommittee = hasNextSyncCommitteeProof(update) &&
-            hasFinalityProof(update) &&
-            computeSyncCommitteePeriodAtSlot(update.finalizedHeader.beacon.slot) ==
-            computeSyncCommitteePeriodAtSlot(update.attestedHeader.beacon.slot) &&
-            nextSyncCommitteeRoot == bytes32(0);
+        // Apply optimistic update
+        if (quorumReached && update.attestedHeader.beacon.slot > optimisticSlot) {
+            applyOptimisticUpdate(update);
+        }
+        // Apply finality update
         if (
-            hasSupermajority(update.syncAggregate.participation) &&
-            (update.finalizedHeader.beacon.slot > finalizedHeader.slot || updateHasFinalizedNextSyncCommittee)
+            quorumReached &&
+            (update.finalizedHeader.beacon.slot > finalizedSlot ||
+                (hasNextSyncCommittee(update) && nextSyncCommitteeRoot == bytes32(0)))
         ) {
-            applyLightClientUpdate(update);
+            applyFinalityUpdate(update);
             delete bestValidUpdate;
         }
     }
@@ -106,51 +109,39 @@ contract EthereumLightClient is IEthereumLightClient, LightClientStore, Ownable 
                 update.attestedHeader.beacon.slot > update.finalizedHeader.beacon.slot,
             "bad slot"
         );
-        uint64 storePeriod = computeSyncCommitteePeriodAtSlot(finalizedHeader.slot);
-        uint64 updatePeriod = computeSyncCommitteePeriodAtSlot(update.finalizedHeader.beacon.slot);
-        require(updatePeriod == storePeriod || updatePeriod == storePeriod + 1);
+        uint64 storePeriod = computeSyncCommitteePeriodAtSlot(finalizedSlot);
 
         // Verify update is relavant
         uint64 updateAttestedPeriod = computeSyncCommitteePeriodAtSlot(update.attestedHeader.beacon.slot);
         bool updateHasNextSyncCommittee = nextSyncCommitteeRoot == bytes32(0) &&
             hasNextSyncCommitteeProof(update) &&
             updateAttestedPeriod == storePeriod;
-        // since sync committee update prefers older header (see isBetterUpdate), an update either
+        // Since sync committee update prefers older header (see isBetterUpdate), an update either
         // needs to have a newer header or it should have sync committee update.
-        require(update.attestedHeader.beacon.slot > finalizedHeader.slot || updateHasNextSyncCommittee);
+        require(
+            update.attestedHeader.beacon.slot > finalizedSlot || updateHasNextSyncCommittee,
+            "bad att slot or committee"
+        );
 
         // Verify that the finalityBranch, if present, confirms finalizedHeader
         // to match the finalized checkpoint root saved in the state of attestedHeader.
         // Note that the genesis finalized checkpoint root is represented as a zero hash.
         if (!hasFinalityProof(update)) {
-            require(isEmptyHeader(update.finalizedHeader), "no fin proof");
+            require(isEmpty(update.finalizedHeader), "no fin proof");
         } else {
             // genesis block header
             if (update.finalizedHeader.beacon.slot == 0) {
-                require(isEmptyHeader(update.finalizedHeader), "genesis header should be empty");
+                require(isEmpty(update.finalizedHeader), "genesis header should be empty");
             } else {
-                bool isValidFinalityProof = SSZ.isValidMerkleBranch(
-                    SSZ.hashTreeRoot(update.finalizedHeader.beacon),
+                bool isValidFinalityProof = Helpers.isValidMerkleBranch(
+                    Helpers.hashTreeRoot(update.finalizedHeader.beacon),
                     update.finalityBranch,
                     FINALIZED_ROOT_INDEX,
                     update.attestedHeader.beacon.stateRoot
                 );
                 require(isValidFinalityProof, "bad fin proof");
+                verifyExecutionPayload(update.finalizedHeader, "finalized");
             }
-        }
-
-        // Verify finalizedExecutionStateRoot
-        if (!hasFinalizedExecutionProof(update)) {
-            require(update.finalizedHeader.executionStateRoot == bytes32(0), "no exec fin proof");
-        } else {
-            require(hasFinalityProof(update), "no exec fin proof");
-            bool isValidFinalizedExecutionRootProof = SSZ.isValidMerkleBranch(
-                update.finalizedHeader.executionStateRoot,
-                update.finalizedHeader.executionStateRootBranch,
-                EXECUTION_STATE_ROOT_INDEX,
-                update.finalizedHeader.beacon.bodyRoot
-            );
-            require(isValidFinalizedExecutionRootProof, "bad exec fin proof");
         }
 
         // Verify that the update's nextSyncCommittee, if present, actually is the next sync committee
@@ -164,48 +155,84 @@ contract EthereumLightClient is IEthereumLightClient, LightClientStore, Ownable 
             if (updateAttestedPeriod == storePeriod && nextSyncCommitteeRoot != bytes32(0)) {
                 require(update.nextSyncCommitteeRoot == nextSyncCommitteeRoot, "bad next sync committee");
             }
-            bool isValidSyncCommitteeProof = SSZ.isValidMerkleBranch(
+            bool validSyncCommitteeProof = Helpers.isValidMerkleBranch(
                 update.nextSyncCommitteeRoot,
                 update.nextSyncCommitteeBranch,
                 NEXT_SYNC_COMMITTEE_INDEX,
                 update.attestedHeader.beacon.stateRoot
             );
-            require(isValidSyncCommitteeProof, "bad next sync committee proof");
-            bool isValidCommitteeRootMappingProof = zkVerifier.verifySyncCommitteeRootMappingProof(
+            require(validSyncCommitteeProof, "bad next sync committee proof");
+            bool validCommitteeRootMappingProof = zkVerifier.verifySyncCommitteeRootMappingProof(
                 update.nextSyncCommitteeRoot,
                 update.nextSyncCommitteePoseidonRoot,
                 update.nextSyncCommitteeRootMappingProof
             );
-            require(isValidCommitteeRootMappingProof, "bad next sync committee root mapping proof");
+            require(validCommitteeRootMappingProof, "bad next sync committee root mapping proof");
         }
 
+        // Verify optimistic execution payload
+        verifyExecutionPayload(update.attestedHeader, "optimistic");
+
         // Verify sync committee signature ZK proof
-        bytes4 forkVersion = computeForkVersion(computeEpochAtSlot(update.signatureSlot));
+        verifyCommitteeSignature(update.signatureSlot, update.attestedHeader.beacon, update.syncAggregate);
+    }
+
+    function verifyCommitteeSignature(
+        uint64 signatureSlot,
+        BeaconBlockHeader memory header,
+        SyncAggregate memory syncAggregate
+    ) public view {
+        uint64 storePeriod = computeSyncCommitteePeriodAtSlot(finalizedSlot);
+        uint64 updateSigPeriod = computeSyncCommitteePeriodAtSlot(signatureSlot);
+        if (nextSyncCommitteeRoot != bytes32(0)) {
+            require(updateSigPeriod == storePeriod || updateSigPeriod == storePeriod + 1, "bad sig period 2");
+        } else {
+            require(updateSigPeriod == storePeriod, "bad sig period 1");
+        }
+
+        bytes4 forkVersion = computeForkVersion(computeEpochAtSlot(signatureSlot));
         bytes32 domain = computeDomain(forkVersion);
-        bytes32 signingRoot = computeSigningRoot(update.attestedHeader.beacon, domain);
+        bytes32 signingRoot = computeSigningRoot(header, domain);
         bytes32 activeSyncCommitteePoseidonRoot;
-        if (updatePeriod == storePeriod) {
-            require(currentSyncCommitteePoseidonRoot == update.syncAggregate.poseidonRoot, "bad poseidon root");
+        if (updateSigPeriod == storePeriod) {
+            require(currentSyncCommitteePoseidonRoot == syncAggregate.poseidonRoot, "bad poseidon root");
             activeSyncCommitteePoseidonRoot = currentSyncCommitteePoseidonRoot;
-        } else if (updatePeriod == storePeriod + 1) {
-            require(nextSyncCommitteePoseidonRoot == update.syncAggregate.poseidonRoot, "bad poseidon root");
+        } else {
+            require(nextSyncCommitteePoseidonRoot == syncAggregate.poseidonRoot, "bad poseidon root");
             activeSyncCommitteePoseidonRoot = nextSyncCommitteePoseidonRoot;
         }
         require(
             zkVerifier.verifySignatureProof(
                 signingRoot,
                 activeSyncCommitteePoseidonRoot,
-                update.syncAggregate.participation,
-                update.syncAggregate.commitment,
-                update.syncAggregate.proof
+                syncAggregate.participation,
+                syncAggregate.commitment,
+                syncAggregate.proof
             ),
             "bad bls sig proof"
         );
     }
 
-    function applyLightClientUpdate(LightClientUpdate memory update) private {
-        uint64 storePeriod = computeSyncCommitteePeriodAtSlot(finalizedHeader.slot);
-        uint64 updateFinalizedPeriod = computeSyncCommitteePeriodAtSlot(update.finalizedHeader.beacon.slot);
+    function verifyExecutionPayload(HeaderWithExecution memory h, string memory name) private pure {
+        ExecutionPayload memory exec = h.execution;
+        bool valid = Helpers.isValidMerkleBranch(h.executionRoot, EXECUTION_PAYLOAD_ROOT_INDEX, h.beacon.bodyRoot);
+        require(valid, string.concat("bad exec root proof ", name));
+        valid = Helpers.isValidMerkleBranch(exec.stateRoot, EXECUTION_STATE_ROOT_LOCAL_INDEX, h.executionRoot.leaf);
+        require(valid, string.concat("bad exec state root proof ", name));
+    }
+
+    function applyOptimisticUpdate(LightClientUpdate memory update) private {
+        HeaderWithExecution memory h = update.attestedHeader;
+        bytes32 stateRoot = h.execution.stateRoot.leaf;
+        optimisticExecutionStateRoot = stateRoot;
+        optimisticSlot = h.beacon.slot;
+        emit OptimisticUpdate(h.beacon.slot, stateRoot);
+    }
+
+    function applyFinalityUpdate(LightClientUpdate memory update) private {
+        uint64 updateSlot = update.finalizedHeader.beacon.slot;
+        uint64 storePeriod = computeSyncCommitteePeriodAtSlot(finalizedSlot);
+        uint64 updateFinalizedPeriod = computeSyncCommitteePeriodAtSlot(updateSlot);
         if (nextSyncCommitteeRoot == bytes32(0)) {
             require(updateFinalizedPeriod == storePeriod, "mismatch period");
             nextSyncCommitteeRoot = update.nextSyncCommitteeRoot;
@@ -218,29 +245,12 @@ contract EthereumLightClient is IEthereumLightClient, LightClientStore, Ownable 
             nextSyncCommitteePoseidonRoot = update.nextSyncCommitteePoseidonRoot;
             emit SyncCommitteeUpdated(updateFinalizedPeriod + 1, nextSyncCommitteeRoot, nextSyncCommitteePoseidonRoot);
         }
-        if (update.finalizedHeader.beacon.slot > finalizedHeader.slot) {
-            finalizedHeader = update.finalizedHeader.beacon;
-            if (update.finalizedHeader.executionStateRoot != bytes32(0)) {
-                finalizedExecutionStateRoot = update.finalizedHeader.executionStateRoot;
-                finalizedExecutionStateRootSlot = update.finalizedHeader.beacon.slot;
-            }
-            emit HeaderUpdated(
-                update.finalizedHeader.beacon.slot,
-                update.finalizedHeader.beacon.stateRoot,
-                update.finalizedHeader.executionStateRoot,
-                true
-            );
-        } else if (
-            update.finalizedHeader.beacon.slot == finalizedHeader.slot && finalizedExecutionStateRoot == bytes32(0)
-        ) {
-            finalizedExecutionStateRoot = update.finalizedHeader.executionStateRoot;
-            finalizedExecutionStateRootSlot = update.finalizedHeader.beacon.slot;
-            emit HeaderUpdated(
-                update.finalizedHeader.beacon.slot,
-                update.finalizedHeader.beacon.stateRoot,
-                update.finalizedHeader.executionStateRoot,
-                true
-            );
+        bytes32 updateExecStateRoot = update.finalizedHeader.execution.stateRoot.leaf;
+        if (updateSlot > finalizedSlot) {
+            finalizedExecutionStateRoot = updateExecStateRoot;
+            finalizedSlot = updateSlot;
+            emit FinalityUpdate(updateSlot, updateExecStateRoot);
+            return;
         }
     }
 
@@ -317,20 +327,20 @@ contract EthereumLightClient is IEthereumLightClient, LightClientStore, Ownable 
         return update.nextSyncCommitteeBranch.length > 0;
     }
 
+    function hasNextSyncCommittee(LightClientUpdate memory update) private pure returns (bool) {
+        return
+            hasNextSyncCommitteeProof(update) &&
+            hasFinalityProof(update) &&
+            computeSyncCommitteePeriodAtSlot(update.finalizedHeader.beacon.slot) ==
+            computeSyncCommitteePeriodAtSlot(update.attestedHeader.beacon.slot);
+    }
+
     function hasFinalityProof(LightClientUpdate memory update) private pure returns (bool) {
         return update.finalityBranch.length > 0;
     }
 
-    function hasFinalizedExecutionProof(LightClientUpdate memory update) private pure returns (bool) {
-        return update.finalizedHeader.executionStateRootBranch.length > 0;
-    }
-
     function hasSupermajority(uint64 participation) private pure returns (bool) {
         return participation * 3 >= SYNC_COMMITTEE_SIZE * 2;
-    }
-
-    function isEmptyHeader(HeaderWithExecution memory header) private pure returns (bool) {
-        return header.beacon.stateRoot == bytes32(0);
     }
 
     function currentSlot() private view returns (uint64) {
@@ -367,6 +377,6 @@ contract EthereumLightClient is IEthereumLightClient, LightClientStore, Ownable 
 
     // computeDomain(forkVersion, genesisValidatorsRoot)
     function computeSigningRoot(BeaconBlockHeader memory header, bytes32 domain) public pure returns (bytes32) {
-        return sha256(bytes.concat(SSZ.hashTreeRoot(header), domain));
+        return sha256(bytes.concat(Helpers.hashTreeRoot(header), domain));
     }
 }

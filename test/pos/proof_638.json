@@ -25,31 +25,31 @@
     }
   },
   "bls_sig_proof": {
-    "participation": 351,
+    "participation": 431,
     "poseidon_root": "0x0b90f32a0d03c13a909e40b8bfa0dc049a9f3f8fbaab12ae880a0fa540e709ca",
-    "commitment_pub": "0x20a73442716736029f36c7cfbb0f8b0c2396480afca33a2cf12ea5ff303b990e",
+    "commitment_pub": "0x2418fa00e3fb47fb38ff3a8daa526123255771aa103c00893d5c21b91f85000c",
     "proof": {
       "a": [
-        "0x2fcc68c288c35cc026d9417d7c2a8e16adda6a30bb0d6d8a70bf4fa1924e7179",
-        "0x056ac94e18f7aaaee2f76082c6ad49e002f3bea6cc6b8d6d3ae2977751a8022b"
+        "0x08a4b5e34565195d4801cd0a028e533e996fe0381ffebcb02c1b54f7446cae6a",
+        "0x0ec1ec6469d132e0c708078d6481d4346517947d29128bfc8880aac3b353b9d6"
       ],
       "b": [
         [
-          "0x1ccf3744aaa47ea42d8fb569b336d944a6f8e7e49471ee2ebee5b058eb9fe0b0",
-          "0x1f7241a0208a2916185437aeb7aa4ee92e58686131fbc1d24221213ba60adf0b"
+          "0x29d777c72b69e3de9f83c0c457558c0609753552e68aa9a308151cdfd4845e68",
+          "0x2a6ec1da316338bca20d69adac3de56aed7d70971f99a0b9094aab031859d7d7"
         ],
         [
-          "0x15263a4a5cbafde1d893c7fc9788b1a959602881b0faa1199fa1bfe41def0db2",
-          "0x1f27906b5cab7ddf2a35d923195512699bccc65adb562cd8fc19876d4c32fe1b"
+          "0x2f4c4db0bc84dec13113bdefce6d2f9278d7162bff9cec12e9b6c6fe56d967bc",
+          "0x12d5f3c29c529ef8c3dc1eeba41063b1a67de6db685ce8b8ce8d4fb59150782a"
         ]
       ],
       "c": [
-        "0x15a0706bbf25b38fb75f15056e4406ca7eba2a75b0606381453904958d44da6b",
-        "0x1b59bc5a531edaf285ae09371aafb97ba868896557eb343cf40c96308f2255a0"
+        "0x254e28154a94875ba7199db2ed29f47f059456d492c6456c611b0c5bc8c971e1",
+        "0x2fbd0db936a8c958ddeab78a069caf7f94ae4ccbb5db8bb03b051a5db7481438"
       ],
       "commitment": [
-        "0x20e770f2cd68ecd576208cd92632d5a8b53db55008c9abc316d10c6b9bde64e4",
-        "0x1715e4305be062eadb3196674be4fd873bc3131e5cf2c95b2b4bc284dae32b92"
+        "0x28a9fd2a20b42f86c436f9d044e14453e374428211607cc46f5dba1da8c5d0db",
+        "0x0d8658c7c37a8a769012bf7740de1e378a73b9c50f16132d590fcf90b27aa021"
       ]
     }
   },

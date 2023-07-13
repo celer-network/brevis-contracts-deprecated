@@ -49,11 +49,7 @@ library ECDSA {
 
     /// @dev Returns the address that signed a hashed message (`hash`) with
     /// `signature`. This address can then be used for verification purposes.
-    function recover(
-        bytes32 hash,
-        bytes32 r,
-        bytes32 vs
-    ) internal pure returns (address) {
+    function recover(bytes32 hash, bytes32 r, bytes32 vs) internal pure returns (address) {
         // Check the signature length
         // - case 64: r,vs signature (cf https://eips.ethereum.org/EIPS/eip-2098)
         bytes32 s = vs & bytes32(0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
@@ -62,12 +58,7 @@ library ECDSA {
         return recover(hash, v, r, s);
     }
 
-    function recover(
-        bytes32 hash,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) internal pure returns (address) {
+    function recover(bytes32 hash, uint8 v, bytes32 r, bytes32 s) internal pure returns (address) {
         // EIP-2 still allows signature malleability for ecrecover(). Remove this possibility and make the signature
         // unique. Appendix F in the Ethereum Yellow paper (https://ethereum.github.io/yellowpaper/paper.pdf), defines
         // the valid range for s in (281): 0 < s < secp256k1n ÷ 2 + 1, and for v in (282): v ∈ {27, 28}. Most

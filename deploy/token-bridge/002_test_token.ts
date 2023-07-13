@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
-import { DeployFunction } from 'hardhat-deploy/types';
-import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import {DeployFunction} from 'hardhat-deploy/types';
+import {HardhatRuntimeEnvironment} from 'hardhat/types';
 
 dotenv.config();
 
@@ -9,12 +9,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const args = [
-    process.env.TEST_TOKEN_NAME,
-    process.env.TEST_TOKEN_SYMBOL,
-    process.env.TEST_TOKEN_DECIMALS,
-    process.env.TEST_TOKEN_SUPPLY
-  ];
+  const args = ['USDC', 'USDC', 18, '0'];
 
   const testToken = await deploy('MintableERC20', {
     from: deployer,
@@ -24,5 +19,5 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   await hre.run('verify:verify', { address: testToken.address, constructorArguments: args });
 };
 
-deployFunc.tags = ['Test' + (process.env.TEST_TOKEN_SYMBOL || 'Token')];
+deployFunc.tags = ['MintableERC20'];
 export default deployFunc;
