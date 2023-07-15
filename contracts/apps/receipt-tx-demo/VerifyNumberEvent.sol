@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../../verifiers/interfaces/IReceiptVerifier.sol";
 import {BytesLib} from "solidity-bytes-utils/contracts/BytesLib.sol";
 
-contract VerifyEmitNumber is Ownable {
+contract VerifyNumberEvent is Ownable {
     IReceiptVerifier public receiptVerifier;
     mapping(uint64 => address) public srcContract;
     bytes32 constant eventTopic = keccak256(bytes("SendNumber(address,uint256)"));
@@ -21,17 +21,20 @@ contract VerifyEmitNumber is Ownable {
         bytes calldata _proof,
         bytes calldata _auxiBlkVerifyInfo
     ) external {
+        // retrieve verified event
         IReceiptVerifier.ReceiptInfo memory receiptInfo = receiptVerifier.verifyReceiptAndLog(
             _receipt,
             _proof,
             _auxiBlkVerifyInfo
         );
-        require(receiptInfo.success, "tx failed");
-
         IReceiptVerifier.LogInfo memory log = receiptInfo.logs[0];
+
+        // compare expected and verified values
+        require(receiptInfo.success, "tx failed");
         require(log.addr == srcContract[receiptInfo.chainId], "invalid sender contract");
         require(log.topics[0] == eventTopic, "invalid event");
 
+        // decode event data
         address from = address(bytes20(BytesLib.slice(log.data, 12, 20)));
         uint256 number = uint256(bytes32(BytesLib.slice(log.data, 32, 32)));
         emit VerifiedNumber(receiptInfo.chainId, receiptInfo.blkNum, from, number);
