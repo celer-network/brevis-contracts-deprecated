@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity 0.8.18;
+pragma solidity ^0.8.18;
 
 library RLPEncode {
     uint8 constant STRING_OFFSET = 0x80;

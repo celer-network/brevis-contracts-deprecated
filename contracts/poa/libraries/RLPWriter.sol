@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Inspired: https://github.com/ethereum-optimism/optimism/blob/v1.0.9/packages/contracts-bedrock/contracts/libraries/rlp/RLPWriter.sol
 
-pragma solidity 0.8.18;
+pragma solidity ^0.8.18;
 
 import "./Memory.sol";
 

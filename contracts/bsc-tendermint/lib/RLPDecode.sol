@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity 0.8.18;
+pragma solidity ^0.8.18;
 
 library RLPDecode {
     uint8 constant STRING_SHORT_START = 0x80;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity ^0.8.18;
 
 // light client security params
 uint256 constant MIN_SYNC_COMMITTEE_PARTICIPANTS = 1;

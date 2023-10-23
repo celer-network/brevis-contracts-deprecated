@@ -47,22 +47,22 @@ describe('Receipt circuit proof verification', async () => {
     await expect(
       gasReporter.receiptVerifyProof(
         [
-          BigNumber.from('0x2d00eee00b859cbeca6b703a606cbbc7d6f7b6253977571c539ba6cbf10fcace'),
-          BigNumber.from('0x1ea303bca6d60dccf866b1002fd4a035156aa1f695af7d439c7ccd3d24f6e386')
+          BigNumber.from('0x2c518faac1930a047fe3f409647301be1b8c717c05e7be57c7364eeec64e0afe'),
+          BigNumber.from('0x161833dca478bc0dbf7fd208364caa3b67708116e7c5544e7ac30761d2ac892a')
         ],
         [
           [
-            BigNumber.from('0x14fa8bc6fcf069e130de5f14d1c45f5b6f4b796a337fcf77e688c41af580412f'),
-            BigNumber.from('0x2947d2563d96dc9fa054575c2423b62e09cd9bce90f8c76b61f285a7e9dc6b5c')
+            BigNumber.from('0x2ce8e956869c5ab9557aafd1766c96fae726e4b8790c2d8fa2ccdd8beba33080'),
+            BigNumber.from('0x06d9ea8ee23d1df99329e5e1920b3b26e85926056d9903bff9ee08814fd5c486')
           ],
           [
-            BigNumber.from('0x19c4f5628fa09412a555b00c469f61f5005ac2bc61ac8c8b1ffc5f212fc2bbf3'),
-            BigNumber.from('0x01d696571be2631a06687f02a338146bc9a0a1bd64acf54fd296aa9a744d0565')
+            BigNumber.from('0x17dfef6c5c408b5e4af92c19e5f160430e16acf350fe22aa4af3772278a00b6f'),
+            BigNumber.from('0x235f8dc87868313c5e0c5e9b5953155938dd0efc371f8b08af8a15592eda73f1')
           ]
         ],
         [
-          BigNumber.from('0x1c2e562b284c0443549212be078b85eca5be38b45e6cfcd940950aaf9216f09d'),
-          BigNumber.from('0x14b7b36aa491a0e6a8c1a84735439dac7fbc855773666f899560915a341e1384')
+          BigNumber.from('0x1e0bd8018b4f177864db0f618fa26d4f19f2a97f392e916ce7b29feaef569969'),
+          BigNumber.from('0x24ab8b849877e48500297733e25819fada1f2c45c5e7933620383ad302468c13')
         ],
         [BigNumber.from('0x0'), BigNumber.from('0x0')],
         publicInputs
@@ -83,22 +83,22 @@ describe('Receipt circuit proof verification', async () => {
     await expect(
       gasReporter.receiptVerifyProof(
         [
-          BigNumber.from('0x2d00eee00b859cbeca6b703a606cbbc7d6f7b6253977571c539ba6cbf10fcace'),
-          BigNumber.from('0x1ea303bca6d60dccf866b1002fd4a035156aa1f695af7d439c7ccd3d24f6e386')
+          BigNumber.from('0x2c518faac1930a047fe3f409647301be1b8c717c05e7be57c7364eeec64e0afe'),
+          BigNumber.from('0x161833dca478bc0dbf7fd208364caa3b67708116e7c5544e7ac30761d2ac892a')
         ],
         [
           [
-            BigNumber.from('0x14fa8bc6fcf069e130de5f14d1c45f5b6f4b796a337fcf77e688c41af580412f'),
-            BigNumber.from('0x2947d2563d96dc9fa054575c2423b62e09cd9bce90f8c76b61f285a7e9dc6b5c')
+            BigNumber.from('0x2ce8e956869c5ab9557aafd1766c96fae726e4b8790c2d8fa2ccdd8beba33080'),
+            BigNumber.from('0x06d9ea8ee23d1df99329e5e1920b3b26e85926056d9903bff9ee08814fd5c486')
           ],
           [
-            BigNumber.from('0x19c4f5628fa09412a555b00c469f61f5005ac2bc61ac8c8b1ffc5f212fc2bbf3'),
-            BigNumber.from('0x01d696571be2631a06687f02a338146bc9a0a1bd64acf54fd296aa9a744d0565')
+            BigNumber.from('0x17dfef6c5c408b5e4af92c19e5f160430e16acf350fe22aa4af3772278a00b6f'),
+            BigNumber.from('0x235f8dc87868313c5e0c5e9b5953155938dd0efc371f8b08af8a15592eda73f1')
           ]
         ],
         [
-          BigNumber.from('0x1c2e562b284c0443549212be078b85eca5be38b45e6cfcd940950aaf9216f09d'),
-          BigNumber.from('0x14b7b36aa491a0e6a8c1a84735439dac7fbc855773666f899560915a341e1384')
+          BigNumber.from('0x1e0bd8018b4f177864db0f618fa26d4f19f2a97f392e916ce7b29feaef569969'),
+          BigNumber.from('0x24ab8b849877e48500297733e25819fada1f2c45c5e7933620383ad302468c13')
         ],
         [BigNumber.from('0x0'), BigNumber.from('0x0')],
         publicInputs
@@ -124,24 +124,24 @@ describe('Receipt circuit proof verification', async () => {
     ];
 
     const a = [
-      BigNumber.from('0x2d00eee00b859cbeca6b703a606cbbc7d6f7b6253977571c539ba6cbf10fcace'),
-      BigNumber.from('0x1ea303bca6d60dccf866b1002fd4a035156aa1f695af7d439c7ccd3d24f6e386')
+      BigNumber.from('0x2c518faac1930a047fe3f409647301be1b8c717c05e7be57c7364eeec64e0afe'),
+      BigNumber.from('0x161833dca478bc0dbf7fd208364caa3b67708116e7c5544e7ac30761d2ac892a')
     ];
 
     const b = [
       [
-        BigNumber.from('0x14fa8bc6fcf069e130de5f14d1c45f5b6f4b796a337fcf77e688c41af580412f'),
-        BigNumber.from('0x2947d2563d96dc9fa054575c2423b62e09cd9bce90f8c76b61f285a7e9dc6b5c')
+        BigNumber.from('0x2ce8e956869c5ab9557aafd1766c96fae726e4b8790c2d8fa2ccdd8beba33080'),
+        BigNumber.from('0x06d9ea8ee23d1df99329e5e1920b3b26e85926056d9903bff9ee08814fd5c486')
       ],
       [
-        BigNumber.from('0x19c4f5628fa09412a555b00c469f61f5005ac2bc61ac8c8b1ffc5f212fc2bbf3'),
-        BigNumber.from('0x01d696571be2631a06687f02a338146bc9a0a1bd64acf54fd296aa9a744d0565')
+        BigNumber.from('0x17dfef6c5c408b5e4af92c19e5f160430e16acf350fe22aa4af3772278a00b6f'),
+        BigNumber.from('0x235f8dc87868313c5e0c5e9b5953155938dd0efc371f8b08af8a15592eda73f1')
       ]
     ];
 
     const c = [
-      BigNumber.from('0x1c2e562b284c0443549212be078b85eca5be38b45e6cfcd940950aaf9216f09d'),
-      BigNumber.from('0x14b7b36aa491a0e6a8c1a84735439dac7fbc855773666f899560915a341e1384')
+      BigNumber.from('0x1e0bd8018b4f177864db0f618fa26d4f19f2a97f392e916ce7b29feaef569969'),
+      BigNumber.from('0x24ab8b849877e48500297733e25819fada1f2c45c5e7933620383ad302468c13')
     ];
 
     const commitment = [BigNumber.from('0x0'), BigNumber.from('0x0')];
@@ -178,24 +178,24 @@ describe('Receipt circuit proof verification', async () => {
     ];
 
     const a = [
-      BigNumber.from('0x2d00eee00b859cbeca6b703a606cbbc7d6f7b6253977571c539ba6cbf10fcace'),
-      BigNumber.from('0x1ea303bca6d60dccf866b1002fd4a035156aa1f695af7d439c7ccd3d24f6e386')
+      BigNumber.from('0x2c518faac1930a047fe3f409647301be1b8c717c05e7be57c7364eeec64e0afe'),
+      BigNumber.from('0x161833dca478bc0dbf7fd208364caa3b67708116e7c5544e7ac30761d2ac892a')
     ];
 
     const b = [
       [
-        BigNumber.from('0x14fa8bc6fcf069e130de5f14d1c45f5b6f4b796a337fcf77e688c41af580412f'),
-        BigNumber.from('0x2947d2563d96dc9fa054575c2423b62e09cd9bce90f8c76b61f285a7e9dc6b5c')
+        BigNumber.from('0x2ce8e956869c5ab9557aafd1766c96fae726e4b8790c2d8fa2ccdd8beba33080'),
+        BigNumber.from('0x06d9ea8ee23d1df99329e5e1920b3b26e85926056d9903bff9ee08814fd5c486')
       ],
       [
-        BigNumber.from('0x19c4f5628fa09412a555b00c469f61f5005ac2bc61ac8c8b1ffc5f212fc2bbf3'),
-        BigNumber.from('0x01d696571be2631a06687f02a338146bc9a0a1bd64acf54fd296aa9a744d0565')
+        BigNumber.from('0x17dfef6c5c408b5e4af92c19e5f160430e16acf350fe22aa4af3772278a00b6f'),
+        BigNumber.from('0x235f8dc87868313c5e0c5e9b5953155938dd0efc371f8b08af8a15592eda73f1')
       ]
     ];
 
     const c = [
-      BigNumber.from('0x1c2e562b284c0443549212be078b85eca5be38b45e6cfcd940950aaf9216f09d'),
-      BigNumber.from('0x14b7b36aa491a0e6a8c1a84735439dac7fbc855773666f899560915a341e1384')
+      BigNumber.from('0x1e0bd8018b4f177864db0f618fa26d4f19f2a97f392e916ce7b29feaef569969'),
+      BigNumber.from('0x24ab8b849877e48500297733e25819fada1f2c45c5e7933620383ad302468c13')
     ];
 
     const commitment = [BigNumber.from('0x0'), BigNumber.from('0x0')];

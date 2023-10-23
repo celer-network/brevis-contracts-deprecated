@@ -43,22 +43,22 @@ describe('Transaction proof verify', async () => {
     await expect(
       verifier.transactionVerifyProof(
         [
-          BigNumber.from('0x091712d21a7fb14be9027310e2cbcc7d9d4132d6422598586a4a1e481d69d234'),
-          BigNumber.from('0x16c655962badf7228ca62ae8d5674c1bdf10cd4edbd880e039a54ef6e2e55eab')
+          BigNumber.from('0x2512c06f6094b50e90709f0cbc3f0f455d2c2be86f4d8fe98f230a7f19d66796'),
+          BigNumber.from('0x16ee8249067ecd870819b6beae7255584f37d9e3eecee4b749d8101b2e6c07e7')
         ],
         [
           [
-            BigNumber.from('0x0798c4c36b7d42124034a55327f8af1a2ec29ecedf1dd7c8b72690164f7d7841'),
-            BigNumber.from('0x0398de45e5843c72045fc9d01479c34ea4e6eebfbc8cbb4d13e35f36191c83ca')
+            BigNumber.from('0x124ea5e2c0be872ba3209c8fe7c567825c62a6256ada212afa3ecc68b9df2f1f'),
+            BigNumber.from('0x161cd7137912abe46c714398421f2ea62797af0eee60d8cdc7296c211a044db5')
           ],
           [
-            BigNumber.from('0x1e8324d656f1700f87a9b7f8f06b081f5ed8e7dd363a56fad209997815ea54b6'),
-            BigNumber.from('0x231a2b40a5147fcf71ab6d80de168e6a30cb26b87b14ae0ab7c3c9f1bd355513')
+            BigNumber.from('0x11a04204fcfeef8ee2835bd903bd00d434f5820e4fd13de42b0a9853e1bcd337'),
+            BigNumber.from('0x041ffd173b9a720e54cd71b0ec58a03bd6067327d82da157ef699e236cbef18a')
           ]
         ],
         [
-          BigNumber.from('0x23d9a9af2e7544e6c0941cdf92115b40ddbd2b0a6bd33ef343823ea4c4e9ec11'),
-          BigNumber.from('0x2eb59836c9c43e2a6a6abc07ca138cb9a70588dd72befa183a4d8af4bec4b44c')
+          BigNumber.from('0x2ed8fb551f5d4facf8abd74ea009049afe861b5010c0f7dd40831b758aa76e6c'),
+          BigNumber.from('0x053b9e12ab6d8e115cb639c090534560d8bc348fa84f938c39f8279f6ca1c2d1')
         ],
         [BigNumber.from('0x0'), BigNumber.from('0x0')],
         publicInputs
@@ -78,22 +78,22 @@ describe('Transaction proof verify', async () => {
     await expect(
       verifier.transactionVerifyProof(
         [
-          BigNumber.from('0x091712d21a7fb14be9027310e2cbcc7d9d4132d6422598586a4a1e481d69d234'),
-          BigNumber.from('0x16c655962badf7228ca62ae8d5674c1bdf10cd4edbd880e039a54ef6e2e55eab')
+          BigNumber.from('0x2512c06f6094b50e90709f0cbc3f0f455d2c2be86f4d8fe98f230a7f19d66796'),
+          BigNumber.from('0x16ee8249067ecd870819b6beae7255584f37d9e3eecee4b749d8101b2e6c07e7')
         ],
         [
           [
-            BigNumber.from('0x0798c4c36b7d42124034a55327f8af1a2ec29ecedf1dd7c8b72690164f7d7841'),
-            BigNumber.from('0x0398de45e5843c72045fc9d01479c34ea4e6eebfbc8cbb4d13e35f36191c83ca')
+            BigNumber.from('0x124ea5e2c0be872ba3209c8fe7c567825c62a6256ada212afa3ecc68b9df2f1f'),
+            BigNumber.from('0x161cd7137912abe46c714398421f2ea62797af0eee60d8cdc7296c211a044db5')
           ],
           [
-            BigNumber.from('0x1e8324d656f1700f87a9b7f8f06b081f5ed8e7dd363a56fad209997815ea54b6'),
-            BigNumber.from('0x231a2b40a5147fcf71ab6d80de168e6a30cb26b87b14ae0ab7c3c9f1bd355513')
+            BigNumber.from('0x11a04204fcfeef8ee2835bd903bd00d434f5820e4fd13de42b0a9853e1bcd337'),
+            BigNumber.from('0x041ffd173b9a720e54cd71b0ec58a03bd6067327d82da157ef699e236cbef18a')
           ]
         ],
         [
-          BigNumber.from('0x23d9a9af2e7544e6c0941cdf92115b40ddbd2b0a6bd33ef343823ea4c4e9ec11'),
-          BigNumber.from('0x2eb59836c9c43e2a6a6abc07ca138cb9a70588dd72befa183a4d8af4bec4b44c')
+          BigNumber.from('0x2ed8fb551f5d4facf8abd74ea009049afe861b5010c0f7dd40831b758aa76e6c'),
+          BigNumber.from('0x053b9e12ab6d8e115cb639c090534560d8bc348fa84f938c39f8279f6ca1c2d1')
         ],
         [BigNumber.from('0x0'), BigNumber.from('0x0')],
         publicInputs
@@ -119,24 +119,24 @@ describe('Transaction proof verify', async () => {
     ];
 
     const a = [
-      BigNumber.from('0x091712d21a7fb14be9027310e2cbcc7d9d4132d6422598586a4a1e481d69d234'),
-      BigNumber.from('0x16c655962badf7228ca62ae8d5674c1bdf10cd4edbd880e039a54ef6e2e55eab')
+      BigNumber.from('0x2512c06f6094b50e90709f0cbc3f0f455d2c2be86f4d8fe98f230a7f19d66796'),
+      BigNumber.from('0x16ee8249067ecd870819b6beae7255584f37d9e3eecee4b749d8101b2e6c07e7')
     ];
 
     const b = [
       [
-        BigNumber.from('0x0798c4c36b7d42124034a55327f8af1a2ec29ecedf1dd7c8b72690164f7d7841'),
-        BigNumber.from('0x0398de45e5843c72045fc9d01479c34ea4e6eebfbc8cbb4d13e35f36191c83ca')
+        BigNumber.from('0x124ea5e2c0be872ba3209c8fe7c567825c62a6256ada212afa3ecc68b9df2f1f'),
+        BigNumber.from('0x161cd7137912abe46c714398421f2ea62797af0eee60d8cdc7296c211a044db5')
       ],
       [
-        BigNumber.from('0x1e8324d656f1700f87a9b7f8f06b081f5ed8e7dd363a56fad209997815ea54b6'),
-        BigNumber.from('0x231a2b40a5147fcf71ab6d80de168e6a30cb26b87b14ae0ab7c3c9f1bd355513')
+        BigNumber.from('0x11a04204fcfeef8ee2835bd903bd00d434f5820e4fd13de42b0a9853e1bcd337'),
+        BigNumber.from('0x041ffd173b9a720e54cd71b0ec58a03bd6067327d82da157ef699e236cbef18a')
       ]
     ];
 
     const c = [
-      BigNumber.from('0x23d9a9af2e7544e6c0941cdf92115b40ddbd2b0a6bd33ef343823ea4c4e9ec11'),
-      BigNumber.from('0x2eb59836c9c43e2a6a6abc07ca138cb9a70588dd72befa183a4d8af4bec4b44c')
+      BigNumber.from('0x2ed8fb551f5d4facf8abd74ea009049afe861b5010c0f7dd40831b758aa76e6c'),
+      BigNumber.from('0x053b9e12ab6d8e115cb639c090534560d8bc348fa84f938c39f8279f6ca1c2d1')
     ];
 
     const commitment = [BigNumber.from('0x0'), BigNumber.from('0x0')];
@@ -173,24 +173,24 @@ describe('Transaction proof verify', async () => {
     ];
 
     const a = [
-      BigNumber.from('0x091712d21a7fb14be9027310e2cbcc7d9d4132d6422598586a4a1e481d69d234'),
-      BigNumber.from('0x16c655962badf7228ca62ae8d5674c1bdf10cd4edbd880e039a54ef6e2e55eab')
+      BigNumber.from('0x2512c06f6094b50e90709f0cbc3f0f455d2c2be86f4d8fe98f230a7f19d66796'),
+      BigNumber.from('0x16ee8249067ecd870819b6beae7255584f37d9e3eecee4b749d8101b2e6c07e7')
     ];
 
     const b = [
       [
-        BigNumber.from('0x0798c4c36b7d42124034a55327f8af1a2ec29ecedf1dd7c8b72690164f7d7841'),
-        BigNumber.from('0x0398de45e5843c72045fc9d01479c34ea4e6eebfbc8cbb4d13e35f36191c83ca')
+        BigNumber.from('0x124ea5e2c0be872ba3209c8fe7c567825c62a6256ada212afa3ecc68b9df2f1f'),
+        BigNumber.from('0x161cd7137912abe46c714398421f2ea62797af0eee60d8cdc7296c211a044db5')
       ],
       [
-        BigNumber.from('0x1e8324d656f1700f87a9b7f8f06b081f5ed8e7dd363a56fad209997815ea54b6'),
-        BigNumber.from('0x231a2b40a5147fcf71ab6d80de168e6a30cb26b87b14ae0ab7c3c9f1bd355513')
+        BigNumber.from('0x11a04204fcfeef8ee2835bd903bd00d434f5820e4fd13de42b0a9853e1bcd337'),
+        BigNumber.from('0x041ffd173b9a720e54cd71b0ec58a03bd6067327d82da157ef699e236cbef18a')
       ]
     ];
 
     const c = [
-      BigNumber.from('0x23d9a9af2e7544e6c0941cdf92115b40ddbd2b0a6bd33ef343823ea4c4e9ec11'),
-      BigNumber.from('0x2eb59836c9c43e2a6a6abc07ca138cb9a70588dd72befa183a4d8af4bec4b44c')
+      BigNumber.from('0x2ed8fb551f5d4facf8abd74ea009049afe861b5010c0f7dd40831b758aa76e6c'),
+      BigNumber.from('0x053b9e12ab6d8e115cb639c090534560d8bc348fa84f938c39f8279f6ca1c2d1')
     ];
 
     const commitment = [BigNumber.from('0x0'), BigNumber.from('0x0')];

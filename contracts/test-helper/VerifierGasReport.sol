@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity ^0.8.18;
 
 import "../verifiers/interfaces/ITxVerifier.sol";
 import "../verifiers/interfaces/IReceiptVerifier.sol";
