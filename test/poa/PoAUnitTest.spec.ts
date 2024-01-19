@@ -49,7 +49,7 @@ describe('PoAUnitTest', async () => {
     return poaUintTest;
   }
 
-  it('should pass retrive part of bytes', async () => {
+  it('should pass retrieve part of bytes', async () => {
     const testBytes = '0x7894745829abbdfe75814218613412afed1238907ba0';
     const bytesLength = testBytes.length / 2 - 1;
 
